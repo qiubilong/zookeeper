@@ -265,7 +265,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
      *  Restore sessions and data
      */
     public void loadData() throws IOException, InterruptedException {
-        /*
+        /**
          * When a new leader starts executing Leader#lead, it 
          * invokes this method. The database, however, has been
          * initialized before running leader election so that

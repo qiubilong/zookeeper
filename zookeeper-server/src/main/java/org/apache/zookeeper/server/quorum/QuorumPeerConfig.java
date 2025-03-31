@@ -86,8 +86,8 @@ public class QuorumPeerConfig {
 
     protected int initLimit;
     protected int syncLimit;
-    protected int electionAlg = 3;
-    protected int electionPort = 2182;
+    protected int electionAlg = 3;     /* 默认选举算法 FastLeaderElection */
+    protected int electionPort = 2182; /* 选举端口 */
     protected boolean quorumListenOnAllIPs = false;
 
     protected long serverId = UNSET_SERVERID;
@@ -149,7 +149,7 @@ public class QuorumPeerConfig {
                 in.close();
             }
             
-            parseProperties(cfg);
+            parseProperties(cfg);/* 解析配置文件 */
         } catch (IOException e) {
             throw new ConfigException("Error processing " + path, e);
         } catch (IllegalArgumentException e) {
@@ -419,7 +419,7 @@ public class QuorumPeerConfig {
         // backward compatibility - dynamic configuration in the same file as
         // static configuration params see writeDynamicConfig()
         if (dynamicConfigFileStr == null) {
-            setupQuorumPeerConfig(zkProp, true);
+            setupQuorumPeerConfig(zkProp, true); /* 解析集群节点 - server.1=127.0.0.1:2881:3881 */
             if (isDistributed() && isReconfigEnabled()) {
                 // we don't backup static config for standalone mode.
                 // we also don't backup if reconfig feature is disabled.
@@ -601,7 +601,7 @@ public class QuorumPeerConfig {
     void setupQuorumPeerConfig(Properties prop, boolean configBackwardCompatibilityMode)
             throws IOException, ConfigException {
         quorumVerifier = parseDynamicConfig(prop, electionAlg, true, configBackwardCompatibilityMode);
-        setupMyId();
+        setupMyId();/* 解析服务id -myid */
         setupClientPort();
         setupPeerType();
         checkValidity();
@@ -626,7 +626,7 @@ public class QuorumPeerConfig {
                throw new ConfigException("Unrecognised parameter: " + key);                
             }
         }
-        
+        /* 解析集群节点ip端口 server.1=127.0.0.1:2881:3881 */
         QuorumVerifier qv = createQuorumVerifier(dynamicConfigProp, isHierarchical);
                
         int numParticipators = qv.getVotingMembers().size();

@@ -76,7 +76,7 @@ public class QuorumPeerMain {
      * the command line.
      * @param args path to the configfile
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) { /* 启动入口 */
         QuorumPeerMain main = new QuorumPeerMain();
         try {
             main.initializeAndRun(args);
@@ -110,7 +110,7 @@ public class QuorumPeerMain {
     {
         QuorumPeerConfig config = new QuorumPeerConfig();
         if (args.length == 1) {
-            config.parse(args[0]);
+            config.parse(args[0]); /* 解析配置文件 */
         }
 
         // Start and schedule the the purge task
@@ -120,7 +120,7 @@ public class QuorumPeerMain {
         purgeMgr.start();
 
         if (args.length == 1 && config.isDistributed()) {
-            runFromConfig(config);
+            runFromConfig(config); /* 集群方式启动 */
         } else {
             LOG.warn("Either no config or no quorum defined in config, running "
                     + " in standalone mode");
@@ -157,7 +157,7 @@ public class QuorumPeerMain {
                       true);
           }
 
-          quorumPeer = getQuorumPeer();
+          quorumPeer = getQuorumPeer(); /* 节点对象 */
           quorumPeer.setTxnFactory(new FileTxnSnapLog(
                       config.getDataLogDir(),
                       config.getDataDir()));
@@ -165,8 +165,8 @@ public class QuorumPeerMain {
           quorumPeer.enableLocalSessionsUpgrading(
               config.isLocalSessionsUpgradingEnabled());
           //quorumPeer.setQuorumPeers(config.getAllMembers());
-          quorumPeer.setElectionType(config.getElectionAlg());
-          quorumPeer.setMyid(config.getServerId());
+          quorumPeer.setElectionType(config.getElectionAlg());/* 默认选举算法 FastLeaderElection */
+          quorumPeer.setMyid(config.getServerId()); /* 节点id */
           quorumPeer.setTickTime(config.getTickTime());
           quorumPeer.setMinSessionTimeout(config.getMinSessionTimeout());
           quorumPeer.setMaxSessionTimeout(config.getMaxSessionTimeout());
@@ -202,7 +202,7 @@ public class QuorumPeerMain {
           quorumPeer.setQuorumCnxnThreadsSize(config.quorumCnxnThreadsSize);
           quorumPeer.initialize();
           
-          quorumPeer.start();
+          quorumPeer.start(); /* 启动节点并选举 */
           quorumPeer.join();
       } catch (InterruptedException e) {
           // warn, but generally this is ok

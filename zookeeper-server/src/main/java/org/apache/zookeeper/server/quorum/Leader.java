@@ -470,7 +470,7 @@ public class Leader {
 
         try {
             self.tick.set(0);
-            zk.loadData();
+            zk.loadData();/* 加载数据库 */
 
             leaderStateSummary = new StateSummary(self.getCurrentEpoch(), zk.getLastProcessedZxid());
 
@@ -654,7 +654,7 @@ public class Leader {
                     }
                     tickSkip = !tickSkip;
                 }
-                for (LearnerHandler f : getLearners()) {
+                for (LearnerHandler f : getLearners()) { /* 广播ping心跳 */
                     f.ping();
                 }
             }

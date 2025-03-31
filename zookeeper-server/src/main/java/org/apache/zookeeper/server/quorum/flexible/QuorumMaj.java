@@ -38,7 +38,7 @@ public class QuorumMaj implements QuorumVerifier {
     private HashMap<Long, QuorumServer> votingMembers = new HashMap<Long, QuorumServer>();
     private HashMap<Long, QuorumServer> observingMembers = new HashMap<Long, QuorumServer>();
     private long version = 0;
-    private int half;
+    private int half; /* votingMembers.size() / 2 */
 
     public int hashCode() {
         assert false : "hashCode not designed";
@@ -86,7 +86,7 @@ public class QuorumMaj implements QuorumVerifier {
             if (key.startsWith("server.")) {
                 int dot = key.indexOf('.');
                 long sid = Long.parseLong(key.substring(dot + 1));
-                QuorumServer qs = new QuorumServer(sid, value);
+                QuorumServer qs = new QuorumServer(sid, value);/* 节点ip端口 */
                 allMembers.put(Long.valueOf(sid), qs);
                 if (qs.type == LearnerType.PARTICIPANT)
                     votingMembers.put(Long.valueOf(sid), qs);
