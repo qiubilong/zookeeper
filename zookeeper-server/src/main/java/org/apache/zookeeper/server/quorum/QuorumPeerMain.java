@@ -143,7 +143,7 @@ public class QuorumPeerMain {
           ServerCnxnFactory cnxnFactory = null;
           ServerCnxnFactory secureCnxnFactory = null;
 
-          if (config.getClientPortAddress() != null) {
+          if (config.getClientPortAddress() != null) { /* 客户端数据请求Server */
               cnxnFactory = ServerCnxnFactory.createFactory();
               cnxnFactory.configure(config.getClientPortAddress(),
                       config.getMaxClientCnxns(),
@@ -157,7 +157,7 @@ public class QuorumPeerMain {
                       true);
           }
 
-          quorumPeer = getQuorumPeer(); /* 节点对象 */
+          quorumPeer = getQuorumPeer(); /* 服务节点对象 */
           quorumPeer.setTxnFactory(new FileTxnSnapLog(
                       config.getDataLogDir(),
                       config.getDataDir()));
@@ -166,7 +166,7 @@ public class QuorumPeerMain {
               config.isLocalSessionsUpgradingEnabled());
           //quorumPeer.setQuorumPeers(config.getAllMembers());
           quorumPeer.setElectionType(config.getElectionAlg());/* 默认选举算法 FastLeaderElection */
-          quorumPeer.setMyid(config.getServerId()); /* 节点id */
+          quorumPeer.setMyid(config.getServerId()); /* 服务节点id */
           quorumPeer.setTickTime(config.getTickTime());
           quorumPeer.setMinSessionTimeout(config.getMinSessionTimeout());
           quorumPeer.setMaxSessionTimeout(config.getMaxSessionTimeout());
@@ -202,7 +202,7 @@ public class QuorumPeerMain {
           quorumPeer.setQuorumCnxnThreadsSize(config.quorumCnxnThreadsSize);
           quorumPeer.initialize();
           
-          quorumPeer.start(); /* 启动节点并选举 */
+          quorumPeer.start(); /* 启动服务节点并选举 */
           quorumPeer.join();
       } catch (InterruptedException e) {
           // warn, but generally this is ok

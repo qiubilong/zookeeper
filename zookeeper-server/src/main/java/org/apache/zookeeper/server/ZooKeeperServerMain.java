@@ -53,7 +53,7 @@ public class ZooKeeperServerMain {
 
     private AdminServer adminServer;
 
-    /*
+    /**
      * Start up the ZooKeeper server.
      *
      * @param args the configfile or the port datadir [ticktime]

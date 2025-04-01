@@ -87,12 +87,12 @@ public class QuorumPeerConfig {
     protected int initLimit;
     protected int syncLimit;
     protected int electionAlg = 3;     /* 默认选举算法 FastLeaderElection */
-    protected int electionPort = 2182; /* 选举端口 */
+    protected int electionPort = 2182;
     protected boolean quorumListenOnAllIPs = false;
 
-    protected long serverId = UNSET_SERVERID;
+    protected long serverId = UNSET_SERVERID; /* 服务唯一id -- myid */
 
-    protected QuorumVerifier quorumVerifier = null, lastSeenQuorumVerifier = null;
+    protected QuorumVerifier quorumVerifier = null, lastSeenQuorumVerifier = null; /* 集群服务列表 */
     protected int snapRetainCount = 3;
     protected int purgeInterval = 0;
     protected boolean syncEnabled = true;
@@ -419,7 +419,7 @@ public class QuorumPeerConfig {
         // backward compatibility - dynamic configuration in the same file as
         // static configuration params see writeDynamicConfig()
         if (dynamicConfigFileStr == null) {
-            setupQuorumPeerConfig(zkProp, true); /* 解析集群节点 - server.1=127.0.0.1:2881:3881 */
+            setupQuorumPeerConfig(zkProp, true); /* 解析集群节点列表和myid - server.1=127.0.0.1:2881:3881 */
             if (isDistributed() && isReconfigEnabled()) {
                 // we don't backup static config for standalone mode.
                 // we also don't backup if reconfig feature is disabled.

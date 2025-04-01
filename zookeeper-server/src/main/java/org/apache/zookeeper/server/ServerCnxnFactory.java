@@ -125,7 +125,7 @@ public abstract class ServerCnxnFactory {
     
     static public ServerCnxnFactory createFactory() throws IOException {
         String serverCnxnFactoryName =
-            System.getProperty(ZOOKEEPER_SERVER_CNXN_FACTORY);
+            System.getProperty(ZOOKEEPER_SERVER_CNXN_FACTORY); /* NIO 或者 Netty */
         if (serverCnxnFactoryName == null) {
             serverCnxnFactoryName = NIOServerCnxnFactory.class.getName();
         }

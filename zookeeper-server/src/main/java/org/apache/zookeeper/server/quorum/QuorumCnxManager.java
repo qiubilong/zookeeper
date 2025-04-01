@@ -82,10 +82,10 @@ import org.slf4j.LoggerFactory;
  *
  */
 
-public class QuorumCnxManager {
+public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条TCP连接 -- 一条TCP连接一个消息发送线程和一个消息接收线程  */
     private static final Logger LOG = LoggerFactory.getLogger(QuorumCnxManager.class);
 
-    /*
+    /**
      * Maximum capacity of thread queues
      */
     static final int RECV_CAPACITY = 100;
@@ -146,7 +146,7 @@ public class QuorumCnxManager {
     /**
      * Reception queue
      */
-    public final ArrayBlockingQueue<Message> recvQueue;
+    public final ArrayBlockingQueue<Message> recvQueue; /* 选票网络传输层 -- 收到的选票消息 */
     /**
      * Object to synchronize access to recvQueue
      */
@@ -295,7 +295,7 @@ public class QuorumCnxManager {
                             boolean listenOnAllIPs,
                             int quorumCnxnThreadsSize,
                             boolean quorumSaslAuthEnabled) {
-        this.recvQueue = new ArrayBlockingQueue<Message>(RECV_CAPACITY); /* 接受选票消息队列 */
+        this.recvQueue = new ArrayBlockingQueue<Message>(RECV_CAPACITY); /* 接收选票消息队列 */
         this.queueSendMap = new ConcurrentHashMap<Long, ArrayBlockingQueue<ByteBuffer>>();/* 每个节点一个发送选票消息队列 */
         this.senderWorkerMap = new ConcurrentHashMap<Long, SendWorker>(); /* 每个节点一个发送选票消息线程网络io */
         this.lastMessageSent = new ConcurrentHashMap<Long, ByteBuffer>();
@@ -318,7 +318,7 @@ public class QuorumCnxManager {
         initializeConnectionExecutor(mySid, quorumCnxnThreadsSize);
 
         // Starts listener thread that waits for connection requests
-        listener = new Listener();
+        listener = new Listener();/* 负责监听选举端口 */
         listener.setName("QuorumPeerListener");
     }
 
@@ -519,7 +519,7 @@ public class QuorumCnxManager {
                     new BufferedInputStream(sock.getInputStream()));
 
             LOG.debug("Sync handling of connection request received from: {}", sock.getRemoteSocketAddress());
-            handleConnection(sock, din); /* 处理选举连接，保留一条tcp连接，一个节点开启一个选票发送线程和选票接受线程 */
+            handleConnection(sock, din); /* 处理选举连接，一组节点保留一条tcp连接，一个节点开启一个选票发送线程和选票接受线程 */
         } catch (IOException e) {
             LOG.error("Exception handling connection, addr: {}, closing server connection",
                     sock.getRemoteSocketAddress());
@@ -912,7 +912,7 @@ public class QuorumCnxManager {
                         LOG.info("Creating TLS-only quorum server socket");
                         ss = new UnifiedServerSocket(self.getX509Util(), false);
                     } else {
-                        ss = new ServerSocket(); /* 选举端口 BIO Socket 监听 */
+                        ss = new ServerSocket(); /* 监听选举端口 BIO Socket */
                     }
 
                     ss.setReuseAddress(true);
@@ -931,7 +931,7 @@ public class QuorumCnxManager {
                     ss.bind(addr);
                     while (!shutdown) {
                         try {
-                            client = ss.accept();/* 接受其他节点连接 */
+                            client = ss.accept();/* 接收其他节点连接 */
                             setSockOpts(client);
                             LOG.info("Received connection request from {}", client.getRemoteSocketAddress());
                             // Receive and handle the connection request
@@ -942,7 +942,7 @@ public class QuorumCnxManager {
                             if (quorumSaslAuthEnabled) {
                                 receiveConnectionAsync(client);
                             } else {
-                                receiveConnection(client); /* 处理连接，只保留 myid大-->myid小 的tcp连接关系 ，减少tcp网络连接 -- 每个节点开启一组选票发送线程和接收线程 */
+                                receiveConnection(client); /* 处理连接，一组节点保留一条TCP连接，只保留 myid大-->myid小 的tcp连接关系，减少tcp连接 -- 为每个节点开启一组选票发送线程和接收线程 */
                             }
                             numRetries = 0;
                         } catch (SocketTimeoutException e) {
@@ -1233,7 +1233,7 @@ public class QuorumCnxManager {
                      * Allocates a new ByteBuffer to receive the message
                      */
                     byte[] msgArray = new byte[length];
-                    din.readFully(msgArray, 0, length); /* 接受选票消息 */
+                    din.readFully(msgArray, 0, length); /* 接收选票消息 */
                     ByteBuffer message = ByteBuffer.wrap(msgArray);
                     addToRecvQueue(new Message(message.duplicate(), sid)); /* 聚合所有节点的选票消息 --> 选举线程读取 */
                 }

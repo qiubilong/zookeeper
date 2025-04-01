@@ -645,7 +645,7 @@ public class Leader {
                         break;
                     }
 
-                    if (!tickSkip && !syncedAckSet.hasAllQuorums()) {
+                    if (!tickSkip && !syncedAckSet.hasAllQuorums()) {/* 确保集群中超过半数节点存活，防止脑裂问题 */
                         // Lost quorum of last committed and/or last proposed
                         // config, set shutdown flag
                         shutdownMessage = "Not sufficient followers synced, only synced with sids: [ "
