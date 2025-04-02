@@ -131,8 +131,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     private ZKDatabase zkDb;
 
     public static final class AddressTuple {
-        public final InetSocketAddress quorumAddr;
-        public final InetSocketAddress electionAddr;
+        public final InetSocketAddress quorumAddr;  /* Leader与Follow 数据交换地址端口 */
+        public final InetSocketAddress electionAddr;/* 选举地址端口 */
         public final InetSocketAddress clientAddr;
 
         public AddressTuple(InetSocketAddress quorumAddr, InetSocketAddress electionAddr, InetSocketAddress clientAddr) {
@@ -885,7 +885,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             throw new RuntimeException("My id " + myid + " not in the peer list");
          }
         loadDataBase();
-        startServerCnxnFactory();
+        startServerCnxnFactory(); /* 启动处理客户端请求服务 - 2181 */
         try {
             adminServer.start(); /*  管理后台 -  http://localhost:8080/commands */
         } catch (AdminServerException e) {
@@ -1772,7 +1772,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     private void startServerCnxnFactory() {
         if (cnxnFactory != null) {
-            cnxnFactory.start();
+            cnxnFactory.start(); /* 处理客户端请求 - 2181*/
         }
         if (secureCnxnFactory != null) {
             secureCnxnFactory.start();

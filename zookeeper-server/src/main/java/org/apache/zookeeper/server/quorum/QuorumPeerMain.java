@@ -143,7 +143,7 @@ public class QuorumPeerMain {
           ServerCnxnFactory cnxnFactory = null;
           ServerCnxnFactory secureCnxnFactory = null;
 
-          if (config.getClientPortAddress() != null) { /* 客户端数据请求Server */
+          if (config.getClientPortAddress() != null) { /* 处理客户端请求服务 -- netty策略时 NettyServerCnxnFactory */
               cnxnFactory = ServerCnxnFactory.createFactory();
               cnxnFactory.configure(config.getClientPortAddress(),
                       config.getMaxClientCnxns(),
@@ -179,7 +179,7 @@ public class QuorumPeerMain {
               quorumPeer.setLastSeenQuorumVerifier(config.getLastSeenQuorumVerifier(), false);
           }
           quorumPeer.initConfigInZKDatabase();
-          quorumPeer.setCnxnFactory(cnxnFactory);
+          quorumPeer.setCnxnFactory(cnxnFactory);/* 处理客户端请求服务 */
           quorumPeer.setSecureCnxnFactory(secureCnxnFactory);
           quorumPeer.setSslQuorum(config.isSslQuorum());
           quorumPeer.setUsePortUnification(config.shouldUsePortUnification());

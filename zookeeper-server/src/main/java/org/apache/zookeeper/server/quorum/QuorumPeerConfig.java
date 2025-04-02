@@ -66,7 +66,7 @@ public class QuorumPeerConfig {
     private static boolean standaloneEnabled = true;
     private static boolean reconfigEnabled = false;
 
-    protected InetSocketAddress clientPortAddress;
+    protected InetSocketAddress clientPortAddress; /* 客户端请求处理端口 */
     protected InetSocketAddress secureClientPortAddress;
     protected boolean sslQuorum = false;
     protected boolean shouldUsePortUnification = false;

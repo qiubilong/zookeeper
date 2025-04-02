@@ -102,7 +102,7 @@ public class NettyServerCnxnFactory extends ServerCnxnFactory {
     // Access to ipMap or to any Set contained in the map needs to be
     // protected with synchronized (ipMap) { ... }
     private final Map<InetAddress, Set<NettyServerCnxn>> ipMap = new HashMap<>();
-    private InetSocketAddress localAddress;
+    private InetSocketAddress localAddress; /* 监听地址端口 2181 */
     private int maxClientCnxns = 60;
     private final ClientX509Util x509Util;
 

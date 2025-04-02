@@ -246,7 +246,7 @@ public class Leader {
                 if (self.getQuorumListenOnAllIPs()) {
                     ss = new ServerSocket(self.getQuorumAddress().getPort());
                 } else {
-                    ss = new ServerSocket();
+                    ss = new ServerSocket();/* Leader与Follow 数据交换地址端口 */
                 }
             }
             ss.setReuseAddress(true);
