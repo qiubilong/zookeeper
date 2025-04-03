@@ -72,7 +72,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
             throw new IOException("Socket is null!");
         }
         if (sockKey.isReadable()) {
-            int rc = sock.read(incomingBuffer);
+            int rc = sock.read(incomingBuffer); /* 2.1 读取服务端响应  */
             if (rc < 0) {
                 throw new EndOfStreamException(
                         "Unable to read additional data from server sessionid 0x"
@@ -98,7 +98,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                     updateLastHeard();
                     initialized = true;
                 } else {
-                    sendThread.readResponse(incomingBuffer);
+                    sendThread.readResponse(incomingBuffer);/* 2.2 处理服务端响应，唤醒请求者  */
                     lenBuffer.clear();
                     incomingBuffer = lenBuffer;
                     updateLastHeard();
@@ -106,7 +106,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
             }
         }
         if (sockKey.isWritable()) {
-            Packet p = findSendablePacket(outgoingQueue,
+            Packet p = findSendablePacket(outgoingQueue, /* 1.1、获取一个请求数据包 */
                     sendThread.tunnelAuthInProgress());
 
             if (p != null) {
@@ -116,18 +116,18 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                     if ((p.requestHeader != null) &&
                             (p.requestHeader.getType() != OpCode.ping) &&
                             (p.requestHeader.getType() != OpCode.auth)) {
-                        p.requestHeader.setXid(cnxn.getXid());
+                        p.requestHeader.setXid(cnxn.getXid()); /* 设置请求消息事务id，响应时返回，用于关联请求消息 */
                     }
                     p.createBB();
                 }
-                sock.write(p.bb);
+                sock.write(p.bb);/* 1.2、发送请求数据包到服务器 */
                 if (!p.bb.hasRemaining()) {
                     sentCount.getAndIncrement();
                     outgoingQueue.removeFirstOccurrence(p);
                     if (p.requestHeader != null
                             && p.requestHeader.getType() != OpCode.ping
                             && p.requestHeader.getType() != OpCode.auth) {
-                        synchronized (pendingQueue) {
+                        synchronized (pendingQueue) {/* 1.3、加入等待响应队列末尾，服务器响应时关联队头数据包，所以zookeeper客户端不是线程安全的 */
                             pendingQueue.add(p);
                         }
                     }
@@ -272,7 +272,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     void registerAndConnect(SocketChannel sock, InetSocketAddress addr) 
     throws IOException {
         sockKey = sock.register(selector, SelectionKey.OP_CONNECT);
-        boolean immediateConnect = sock.connect(addr);
+        boolean immediateConnect = sock.connect(addr);/* 2、连接服务器 */
         if (immediateConnect) {
             sendThread.primeConnection();
         }
@@ -280,9 +280,9 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     
     @Override
     void connect(InetSocketAddress addr) throws IOException {
-        SocketChannel sock = createSock();
+        SocketChannel sock = createSock(); /* 1、创建socket */
         try {
-           registerAndConnect(sock, addr);
+           registerAndConnect(sock, addr); /* 2、连接服务器 */
       } catch (IOException e) {
             LOG.error("Unable to open socket to " + addr);
             sock.close();
@@ -290,7 +290,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
         }
         initialized = false;
 
-        /*
+        /**
          * Reset incomingBuffer
          */
         lenBuffer.clear();
@@ -342,7 +342,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
     @Override
     void doTransport(int waitTimeOut, List<Packet> pendingQueue, ClientCnxn cnxn)
             throws IOException, InterruptedException {
-        selector.select(waitTimeOut);
+        selector.select(waitTimeOut); /* 1、等待TCP可读写事件 */
         Set<SelectionKey> selected;
         synchronized (this) {
             selected = selector.selectedKeys();
@@ -360,7 +360,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                     sendThread.primeConnection();
                 }
             } else if ((k.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_WRITE)) != 0) {
-                doIO(pendingQueue, cnxn);
+                doIO(pendingQueue, cnxn); /* 2、处理TCP可读写事件 */
             }
         }
         if (sendThread.getZkState().isConnected()) {

@@ -128,12 +128,12 @@ public class ClientCnxn {
     /**
      * These are the packets that have been sent and are waiting for a response.
      */
-    private final LinkedList<Packet> pendingQueue = new LinkedList<Packet>();
+    private final LinkedList<Packet> pendingQueue = new LinkedList<Packet>(); /* 等待响应的请求 */
 
     /**
      * These are the packets that need to be sent.
      */
-    private final LinkedBlockingDeque<Packet> outgoingQueue = new LinkedBlockingDeque<Packet>();
+    private final LinkedBlockingDeque<Packet> outgoingQueue = new LinkedBlockingDeque<Packet>(); /* 待发送的请求 */
 
     private int connectTimeout;
 
@@ -399,7 +399,7 @@ public class ClientCnxn {
         readTimeout = sessionTimeout * 2 / 3;
         readOnly = canBeReadOnly;
 
-        sendThread = new SendThread(clientCnxnSocket);
+        sendThread = new SendThread(clientCnxnSocket); /* TCP数据收发工作线程 */
         eventThread = new EventThread();
         this.clientConfig=zooKeeper.getClientConfig();
         initRequestTimeout();
@@ -714,7 +714,7 @@ public class ClientCnxn {
         if (p.cb == null) {
             synchronized (p) {
                 p.finished = true;
-                p.notifyAll();
+                p.notifyAll(); /* 响应完成，唤醒请求者线程 */
             }
         } else {
             p.finished = true;
@@ -804,11 +804,11 @@ public class ClientCnxn {
      */
     class SendThread extends ZooKeeperThread {
         private long lastPingSentNs;
-        private final ClientCnxnSocket clientCnxnSocket;
+        private final ClientCnxnSocket clientCnxnSocket; /* 默认 ClientCnxnSocketNIO */
         private Random r = new Random();
         private boolean isFirstConnect = true;
 
-        void readResponse(ByteBuffer incomingBuffer) throws IOException {
+        void readResponse(ByteBuffer incomingBuffer) throws IOException { /* 处理服务端响应 */
             ByteBufferInputStream bbis = new ByteBufferInputStream(
                     incomingBuffer);
             BinaryInputArchive bbia = BinaryInputArchive.getArchive(bbis);
@@ -890,14 +890,14 @@ public class ClientCnxn {
                     throw new IOException("Nothing in the queue, but got "
                             + replyHdr.getXid());
                 }
-                packet = pendingQueue.remove();
+                packet = pendingQueue.remove(); /* 获取队首元素，也就是最先等待响应的请求 */
             }
-            /*
+            /**
              * Since requests are processed in order, we better get a response
              * to the first request!
              */
             try {
-                if (packet.requestHeader.getXid() != replyHdr.getXid()) {
+                if (packet.requestHeader.getXid() != replyHdr.getXid()) { /* 校验请求和响应 */
                     packet.replyHeader.setErr(
                             KeeperException.Code.CONNECTIONLOSS.intValue());
                     throw new IOException("Xid out of order. Got Xid "
@@ -924,7 +924,7 @@ public class ClientCnxn {
                             + Long.toHexString(sessionId) + ", packet:: " + packet);
                 }
             } finally {
-                finishPacket(packet);
+                finishPacket(packet);/* 设置响应结果，唤醒请求者线程 */
             }
         }
 
@@ -1101,7 +1101,7 @@ public class ClientCnxn {
             }
             logStartConnect(addr);
 
-            clientCnxnSocket.connect(addr);
+            clientCnxnSocket.connect(addr); /* 与服务端建立TCP连接 - ClientCnxnSocketNIO */
         }
 
         private void logStartConnect(InetSocketAddress addr) {
@@ -1123,7 +1123,7 @@ public class ClientCnxn {
             long lastPingRwServer = Time.currentElapsedTime();
             final int MAX_SEND_PING_INTERVAL = 10000; //10 seconds
             InetSocketAddress serverAddress = null;
-            while (state.isAlive()) {
+            while (state.isAlive()) { /* 循环select检查TCP收发数据 */
                 try {
                     if (!clientCnxnSocket.isConnected()) {
                         // don't re-establish connection if we are closing
@@ -1136,7 +1136,7 @@ public class ClientCnxn {
                         } else {
                             serverAddress = hostProvider.next(1000);
                         }
-                        startConnect(serverAddress);
+                        startConnect(serverAddress); /* 1、与服务器建立TCP连接 */
                         clientCnxnSocket.updateLastSendAndHeard();
                     }
 
@@ -1220,7 +1220,7 @@ public class ClientCnxn {
                         to = Math.min(to, pingRwTimeout - idlePingRwServer);
                     }
 
-                    clientCnxnSocket.doTransport(to, pendingQueue, ClientCnxn.this);
+                    clientCnxnSocket.doTransport(to, pendingQueue, ClientCnxn.this);/* 2、select检查TCP收发数据 */
                 } catch (Throwable e) {
                     if (closing) {
                         if (LOG.isDebugEnabled()) {
@@ -1496,7 +1496,7 @@ public class ClientCnxn {
      * getXid() is called externally by ClientCnxnNIO::doIO() when packets are sent from the outgoingQueue to
      * the server. Thus, getXid() must be public.
      */
-    synchronized public int getXid() {
+    synchronized public int getXid() { /* 请求消息事务id */
         // Avoid negative cxid values.  In particular, cxid values of -4, -2, and -1 are special and
         // must not be used for requests -- see SendThread.readResponse.
         // Skip from MAX to 1.
@@ -1516,7 +1516,7 @@ public class ClientCnxn {
             Record response, WatchRegistration watchRegistration,
             WatchDeregistration watchDeregistration)
             throws InterruptedException {
-        ReplyHeader r = new ReplyHeader();
+        ReplyHeader r = new ReplyHeader();  /* 1、请求放入队列 */
         Packet packet = queuePacket(h, r, request, response, null, null, null,
                 null, watchRegistration, watchDeregistration);
         synchronized (packet) {
@@ -1525,7 +1525,7 @@ public class ClientCnxn {
                 waitForPacketFinish(r, packet);
             } else {
                 // Wait for request completion infinitely
-                while (!packet.finished) {
+                while (!packet.finished) { /* 2、阻塞等待服务端响应 */
                     packet.wait();
                 }
             }
@@ -1610,10 +1610,10 @@ public class ClientCnxn {
                 if (h.getType() == OpCode.closeSession) {
                     closing = true;
                 }
-                outgoingQueue.add(packet);
+                outgoingQueue.add(packet); /* 请求数据包放入队列 */
             }
         }
-        sendThread.getClientCnxnSocket().packetAdded();
+        sendThread.getClientCnxnSocket().packetAdded();/* 唤醒TCP IO工作线程，从select返回 */
         return packet;
     }
 

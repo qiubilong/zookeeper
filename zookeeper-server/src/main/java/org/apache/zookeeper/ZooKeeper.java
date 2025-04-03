@@ -878,10 +878,10 @@ public class ZooKeeper implements AutoCloseable {
                 connectString);
         hostProvider = aHostProvider;
 
-        cnxn = createConnection(connectStringParser.getChrootPath(),
+        cnxn = createConnection(connectStringParser.getChrootPath(), /* 创建TCP连接对象 */
                 hostProvider, sessionTimeout, this, watchManager,
                 getClientCnxnSocket(), canBeReadOnly);
-        cnxn.start();
+        cnxn.start();/* 建立连接，while循环收发tcp数据 */
     }
 
     // @VisibleForTesting
@@ -1533,7 +1533,7 @@ public class ZooKeeper implements AutoCloseable {
             throw new KeeperException.InvalidACLException();
         }
         request.setAcl(acl);
-        ReplyHeader r = cnxn.submitRequest(h, request, response, null);
+        ReplyHeader r = cnxn.submitRequest(h, request, response, null); /* 提交请求 */
         if (r.getErr() != 0) {
             throw KeeperException.create(KeeperException.Code.get(r.getErr()),
                     clientPath);
