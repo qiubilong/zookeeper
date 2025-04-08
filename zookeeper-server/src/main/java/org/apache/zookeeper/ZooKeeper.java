@@ -878,10 +878,10 @@ public class ZooKeeper implements AutoCloseable {
                 connectString);
         hostProvider = aHostProvider;
 
-        cnxn = createConnection(connectStringParser.getChrootPath(), /* 创建TCP连接对象 */
+        cnxn = createConnection(connectStringParser.getChrootPath(), /* 创建客户端TCP连接对象 ClientCnxn */
                 hostProvider, sessionTimeout, this, watchManager,
                 getClientCnxnSocket(), canBeReadOnly);
-        cnxn.start();/* 建立连接，while循环收发tcp数据 */
+        cnxn.start();/* 建立TCP连接，while循环收发数据 */
     }
 
     // @VisibleForTesting

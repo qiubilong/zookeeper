@@ -399,7 +399,7 @@ public class ClientCnxn {
         readTimeout = sessionTimeout * 2 / 3;
         readOnly = canBeReadOnly;
 
-        sendThread = new SendThread(clientCnxnSocket); /* TCP数据收发工作线程 */
+        sendThread = new SendThread(clientCnxnSocket); /* TCP数据 - 收发工作线程 */
         eventThread = new EventThread();
         this.clientConfig=zooKeeper.getClientConfig();
         initRequestTimeout();
@@ -808,7 +808,7 @@ public class ClientCnxn {
         private Random r = new Random();
         private boolean isFirstConnect = true;
 
-        void readResponse(ByteBuffer incomingBuffer) throws IOException { /* 处理服务端响应 */
+        void readResponse(ByteBuffer incomingBuffer) throws IOException { /* 处理服务端的请求响应 */
             ByteBufferInputStream bbis = new ByteBufferInputStream(
                     incomingBuffer);
             BinaryInputArchive bbia = BinaryInputArchive.getArchive(bbis);
@@ -1123,7 +1123,7 @@ public class ClientCnxn {
             long lastPingRwServer = Time.currentElapsedTime();
             final int MAX_SEND_PING_INTERVAL = 10000; //10 seconds
             InetSocketAddress serverAddress = null;
-            while (state.isAlive()) { /* 循环select检查TCP收发数据 */
+            while (state.isAlive()) { /* 循环select检查TCP可读写事件 */
                 try {
                     if (!clientCnxnSocket.isConnected()) {
                         // don't re-establish connection if we are closing

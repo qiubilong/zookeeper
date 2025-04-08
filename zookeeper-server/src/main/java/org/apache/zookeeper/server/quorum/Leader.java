@@ -400,7 +400,7 @@ public class Leader {
 
                         BufferedInputStream is = new BufferedInputStream(
                                 s.getInputStream());
-                        LearnerHandler fh = new LearnerHandler(s, is, Leader.this);/* 一个Follower节点连接成功 */
+                        LearnerHandler fh = new LearnerHandler(s, is, Leader.this);/* Follower节点连接成功 */
                         fh.start();
                     } catch (SocketException e) {
                         error = true;
@@ -476,7 +476,7 @@ public class Leader {
 
             // Start thread that waits for connection requests from
             // new followers.
-            cnxAcceptor = new LearnerCnxAcceptor();/* 等待Follower节点连接处理器 */
+            cnxAcceptor = new LearnerCnxAcceptor();/* 监听等待Follower节点连接，Follower连接后同步Leader数据，保持集群数据一致性  */
             cnxAcceptor.start();
 
             long epoch = getEpochToPropose(self.getId(), self.getAcceptedEpoch());
@@ -536,7 +536,7 @@ public class Leader {
             // us. We do this by waiting for the NEWLEADER packet to get
             // acknowledged
                        
-             waitForEpochAck(self.getId(), leaderStateSummary);
+             waitForEpochAck(self.getId(), leaderStateSummary);/*等待多半数follower接地同步完成 */
              self.setCurrentEpoch(epoch);    
             
              try {
@@ -565,7 +565,7 @@ public class Leader {
                  return;
              }
 
-             startZkServer();
+             startZkServer();/* 初始化请求处理责任链Processors */
              
             /**
              * WARNING: do not use this for anything other than QA testing
@@ -604,7 +604,7 @@ public class Leader {
             // If not null then shutdown this leader
             String shutdownMessage = null;
 
-            while (true) {
+            while (true) { /* 给所有Follower节点广播ping心跳 */
                 synchronized (this) {
                     long start = Time.currentElapsedTime();
                     long cur = start;
@@ -1298,7 +1298,7 @@ public class Leader {
                 + " ]; starting up and setting last processed zxid: 0x{}",
                 Long.toHexString(zk.getZxid()));
         
-        /*
+        /**
          * ZOOKEEPER-1324. the leader sends the new config it must complete
          *  to others inside a NEWLEADER message (see LearnerHandler where
          *  the NEWLEADER message is constructed), and once it has enough
@@ -1314,8 +1314,8 @@ public class Leader {
             allowedToCommit = false;
         }
         
-        zk.startup();
-        /*
+        zk.startup();/* 设置请求处理责任链Processors */
+        /**
          * Update the election vote here to ensure that all members of the
          * ensemble report the same vote to new servers that start up and
          * send leader election notifications to the ensemble.
@@ -1352,7 +1352,7 @@ public class Leader {
                 return;
             }
 
-            /*
+            /**
              * Note that addAck already checks that the learner
              * is a PARTICIPANT.
              */

@@ -100,7 +100,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
     protected SessionTracker sessionTracker;
     private FileTxnSnapLog txnLogFactory = null;
     private ZKDatabase zkDb;
-    private final AtomicLong hzxid = new AtomicLong(0);
+    private final AtomicLong hzxid = new AtomicLong(0); /* 全局递增事务ID */
     public final static Exception ok = new Exception("No prob");
     protected RequestProcessor firstProcessor;
     protected volatile State state = State.INITIAL;
@@ -451,12 +451,12 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         }
     }
 
-    public synchronized void startup() {
+    public synchronized void startup() {/* 设置请求处理责任链Processors */
         if (sessionTracker == null) {
             createSessionTracker();
         }
         startSessionTracker();
-        setupRequestProcessors();
+        setupRequestProcessors(); /* 设置请求处理责任链Processors */
 
         registerJMX();
 

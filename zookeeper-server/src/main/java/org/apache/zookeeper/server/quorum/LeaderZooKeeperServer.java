@@ -88,7 +88,7 @@ public class LeaderZooKeeperServer extends QuorumZooKeeperServer {
 
     @Override
     public synchronized void startup() {
-        super.startup();
+        super.startup();/* 设置请求处理责任链Processors */
         if (containerManager != null) {
             containerManager.start();
         }

@@ -58,10 +58,10 @@ import org.slf4j.LoggerFactory;
  * learner. All communication with a learner is handled by this
  * class.
  */
-public class LearnerHandler extends ZooKeeperThread {
+public class LearnerHandler extends ZooKeeperThread { /* 从节点数据交互处理器 */
     private static final Logger LOG = LoggerFactory.getLogger(LearnerHandler.class);
 
-    protected final Socket sock;
+    protected final Socket sock;//tcp连接socket
 
     public Socket getSocket() {
         return sock;
@@ -241,7 +241,7 @@ public class LearnerHandler extends ZooKeeperThread {
         while (true) {
             try {
                 QuorumPacket p;
-                p = queuedPackets.poll(); /* 等待消息 */
+                p = queuedPackets.poll(); /* 阻塞等待消息 */
                 if (p == null) {
                     bufferedOutput.flush();
                     p = queuedPackets.take();
@@ -260,7 +260,7 @@ public class LearnerHandler extends ZooKeeperThread {
                 if (LOG.isTraceEnabled()) {
                     ZooTrace.logQuorumPacket(LOG, traceMask, 'o', p);
                 }
-                oa.writeRecord(p, "packet"); /* 发送TCP消息 */
+                oa.writeRecord(p, "packet"); /* 给Follower发送TCP消息 */
             } catch (IOException e) {
                 if (!sock.isClosed()) {
                     LOG.warn("Unexpected exception at " + this, e);
@@ -448,7 +448,7 @@ public class LearnerHandler extends ZooKeeperThread {
            
             // Take any necessary action if we need to send TRUNC or DIFF
             // startForwarding() will be called in all cases
-            boolean needSnap = syncFollower(peerLastZxid, leader.zk.getZKDatabase(), leader);
+            boolean needSnap = syncFollower(peerLastZxid, leader.zk.getZKDatabase(), leader);/* 同步数据给Follower，保持集群数据一致性 */
             
             /** if we are not truncating or sending a diff just send a snapshot */
             if (needSnap) {//zxid差异太大，直接发送整个数据库
@@ -494,7 +494,7 @@ public class LearnerHandler extends ZooKeeperThread {
             bufferedOutput.flush();
 
             // Start thread that blast packets in the queue to learner
-            startSendingPackets(); /* 启动线程- 循环将队列中的消息发送给Follower */
+            startSendingPackets(); /* 启动线程- 循环阻塞消费Follower中的消息队列，发送消息给Follower */
             
             /**
              * Have to wait for the first ACK, wait until
@@ -512,7 +512,7 @@ public class LearnerHandler extends ZooKeeperThread {
             if(LOG.isDebugEnabled()){
             	LOG.debug("Received NEWLEADER-ACK message from " + sid);   
             }
-            leader.waitForNewLeaderAck(getSid(), qp.getZxid());
+            leader.waitForNewLeaderAck(getSid(), qp.getZxid());/* Follower节点同步数据完成确认，多半数节点数据同步完成后，leader真正启动处理客户端请求 */
 
             syncLimitCheck.start();
             
@@ -534,7 +534,7 @@ public class LearnerHandler extends ZooKeeperThread {
             LOG.debug("Sending UPTODATE message to " + sid);      
             queuedPackets.add(new QuorumPacket(Leader.UPTODATE, -1, null, null));
 
-            while (true) { /* 唤醒 */
+            while (true) {
                 qp = new QuorumPacket();
                 ia.readRecord(qp, "packet");
 
