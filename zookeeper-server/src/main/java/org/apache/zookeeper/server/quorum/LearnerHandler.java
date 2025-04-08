@@ -534,10 +534,10 @@ public class LearnerHandler extends ZooKeeperThread { /* 从节点数据交互�
             LOG.debug("Sending UPTODATE message to " + sid);      
             queuedPackets.add(new QuorumPacket(Leader.UPTODATE, -1, null, null));
 
-            while (true) {
+            while (true) { /* 循环接收从节点数据 */
                 qp = new QuorumPacket();
-                ia.readRecord(qp, "packet");
-
+                ia.readRecord(qp, "packet");/*阻塞读数据*/
+                LOG.info("接收从节点数据，qp="+qp);
                 long traceMask = ZooTrace.SERVER_PACKET_TRACE_MASK;
                 if (qp.getType() == Leader.PING) {
                     traceMask = ZooTrace.SERVER_PING_TRACE_MASK;

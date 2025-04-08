@@ -1250,7 +1250,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                     try {
                        LOG.info("FOLLOWING");
                         setFollower(makeFollower(logFactory));
-                        follower.followLeader();/* 循环阻塞接受leader心跳。如leader节点异常，跳出循环重新选举 */
+                        follower.followLeader();/* 与Leader建立连接后同步leader数据，循环阻塞响应Leader请求（ping、proposal、commit）。如leader节点异常，跳出循环重新选举 */
                     } catch (Exception e) {
                        LOG.warn("Unexpected exception",e);
                     } finally {
@@ -1263,7 +1263,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                     LOG.info("LEADING");
                     try {
                         setLeader(makeLeader(logFactory));//LeaderZooKeeperServer
-                        leader.lead(); /* 循环广播ping心跳给所有follow节点，直到异常退出 */
+                        leader.lead(); /* 等待多半数Follower节点连接，同步leader数据，启动处理客户端请求处理链。直到异常退出 */
                         setLeader(null);
                     } catch (Exception e) {
                         LOG.warn("Unexpected exception",e);
