@@ -101,7 +101,7 @@ public class Leader {
     volatile LearnerCnxAcceptor cnxAcceptor = null;
 
     // list of all the followers
-    private final HashSet<LearnerHandler> learners =
+    private final HashSet<LearnerHandler> learners = /* 从节点列表 */
         new HashSet<LearnerHandler>();
 
     private final BufferStats proposalStats;
@@ -246,7 +246,7 @@ public class Leader {
                 if (self.getQuorumListenOnAllIPs()) {
                     ss = new ServerSocket(self.getQuorumAddress().getPort());
                 } else {
-                    ss = new ServerSocket();/* Leader与Follow 数据交换地址端口 */
+                    ss = new ServerSocket();/* 监听集群数据交换端口2888，等待Follower节点连接 */
                 }
             }
             ss.setReuseAddress(true);
@@ -400,7 +400,7 @@ public class Leader {
 
                         BufferedInputStream is = new BufferedInputStream(
                                 s.getInputStream());
-                        LearnerHandler fh = new LearnerHandler(s, is, Leader.this);
+                        LearnerHandler fh = new LearnerHandler(s, is, Leader.this);/* 一个Follower节点连接成功 */
                         fh.start();
                     } catch (SocketException e) {
                         error = true;
@@ -470,13 +470,13 @@ public class Leader {
 
         try {
             self.tick.set(0);
-            zk.loadData();/* 加载数据库 */
+            zk.loadData();//初始化事务zxid
 
             leaderStateSummary = new StateSummary(self.getCurrentEpoch(), zk.getLastProcessedZxid());
 
             // Start thread that waits for connection requests from
             // new followers.
-            cnxAcceptor = new LearnerCnxAcceptor();
+            cnxAcceptor = new LearnerCnxAcceptor();/* 等待Follower节点连接处理器 */
             cnxAcceptor.start();
 
             long epoch = getEpochToPropose(self.getId(), self.getAcceptedEpoch());

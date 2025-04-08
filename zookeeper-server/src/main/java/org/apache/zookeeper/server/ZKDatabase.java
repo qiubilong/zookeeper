@@ -95,7 +95,7 @@ public class ZKDatabase {
      * @param snapLog the FileTxnSnapLog mapping this zkdatabase
      */
     public ZKDatabase(FileTxnSnapLog snapLog) {
-        dataTree = createDataTree();
+        dataTree = createDataTree();/* 创建内存数据库 */
         sessionsWithTimeouts = new ConcurrentHashMap<Long, Integer>();
         this.snapLog = snapLog;
 

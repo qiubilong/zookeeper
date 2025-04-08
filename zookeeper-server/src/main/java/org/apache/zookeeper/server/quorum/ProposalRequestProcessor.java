@@ -60,7 +60,7 @@ public class ProposalRequestProcessor implements RequestProcessor {
         // request.addRQRec(">prop");
 
 
-        /* In the following IF-THEN-ELSE block, we process syncs on the leader.
+        /** In the following IF-THEN-ELSE block, we process syncs on the leader.
          * If the sync is coming from a follower, then the follower
          * handler adds it to syncHandler. Otherwise, if it is a client of
          * the leader that issued the sync command, then syncHandler won't

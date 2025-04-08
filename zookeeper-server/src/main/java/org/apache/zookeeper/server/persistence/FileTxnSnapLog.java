@@ -46,15 +46,15 @@ import org.slf4j.LoggerFactory;
  * of txnlog and snapshot
  * classes
  */
-public class FileTxnSnapLog {
+public class FileTxnSnapLog { /* zookeeper日志文件 */
     //the direcotry containing the
     //the transaction logs
-    private final File dataDir;
+    private final File dataDir; /* 数据目录，对应C:\myGit\zookeeper\data\zk1 */
     //the directory containing the
     //the snapshot directory
-    private final File snapDir;
-    private TxnLog txnLog;
-    private SnapShot snapLog;
+    private final File snapDir; /* 等于dataDir */
+    private TxnLog txnLog; /* 事务提议日志 */
+    private SnapShot snapLog; /* dataTree数据库快照 */
     private final boolean trustEmptySnapshot;
     public final static int VERSION = 2;
     public final static String version = "version-";
@@ -159,8 +159,8 @@ public class FileTxnSnapLog {
             checkSnapDir();
         }
 
-        txnLog = new FileTxnLog(this.dataDir);
-        snapLog = new FileSnap(this.snapDir);
+        txnLog = new FileTxnLog(this.dataDir); /* 事务提交文件 log */
+        snapLog = new FileSnap(this.snapDir); /*  内存数据库dataTree快照文件 */
     }
 
     public void setServerStats(ServerStats serverStats) {
@@ -222,7 +222,7 @@ public class FileTxnSnapLog {
      */
     public long restore(DataTree dt, Map<Long, Integer> sessions,
                         PlayBackListener listener) throws IOException {
-        long deserializeResult = snapLog.deserialize(dt, sessions);
+        long deserializeResult = snapLog.deserialize(dt, sessions); /* 1、首先从snapshot文件中加载数据，并返回最大的事务ID */
         FileTxnLog txnLog = new FileTxnLog(dataDir);
 
         RestoreFinalizer finalizer = () -> {
@@ -231,7 +231,7 @@ public class FileTxnSnapLog {
         };
 
         if (-1L == deserializeResult) {
-            /* this means that we couldn't find any snapshot, so we need to
+            /** this means that we couldn't find any snapshot, so we need to
              * initialize an empty database (reported in ZOOKEEPER-2325) */
             if (txnLog.getLastLoggedZxid() != -1) {
                 // ZOOKEEPER-3056: provides an escape hatch for users upgrading
@@ -243,14 +243,14 @@ public class FileTxnSnapLog {
                     return finalizer.run();
                 }
             }
-            /* TODO: (br33d) we should either put a ConcurrentHashMap on restore()
-             *       or use Map on save() */
+            /** TODO: (br33d) we should either put a ConcurrentHashMap on restore()
+             **       or use Map on save() **/
             save(dt, (ConcurrentHashMap<Long, Integer>)sessions);
-            /* return a zxid of zero, since we the database is empty */
+            /** return a zxid of zero, since we the database is empty */
             return 0;
         }
 
-        return finalizer.run();
+        return finalizer.run(); /* 2、再从事务日志文件中重放操作Log到内存数据库 */
     }
 
     /**
@@ -266,7 +266,7 @@ public class FileTxnSnapLog {
      */
     public long fastForwardFromEdits(DataTree dt, Map<Long, Integer> sessions,
                                      PlayBackListener listener) throws IOException {
-        TxnIterator itr = txnLog.read(dt.lastProcessedZxid+1);
+        TxnIterator itr = txnLog.read(dt.lastProcessedZxid+1); /* 从事务ID大于lastProcessedZxid开始  */
         long highestZxid = dt.lastProcessedZxid;
         TxnHeader hdr;
         try {
@@ -282,10 +282,10 @@ public class FileTxnSnapLog {
                     LOG.error("{}(highestZxid) > {}(next log) for type {}",
                             highestZxid, hdr.getZxid(), hdr.getType());
                 } else {
-                    highestZxid = hdr.getZxid();
+                    highestZxid = hdr.getZxid();//更新事务ID
                 }
                 try {
-                    processTransaction(hdr,dt,sessions, itr.getTxn());
+                    processTransaction(hdr,dt,sessions, itr.getTxn()); /* 遍历重放事务log到内存数据库 */
                 } catch(KeeperException.NoNodeException e) {
                    throw new IOException("Failed to process transaction type: " +
                          hdr.getType() + " error: " + e.getMessage(), e);
@@ -364,7 +364,7 @@ public class FileTxnSnapLog {
             rc = dt.processTxn(hdr, txn);
             break;
         default:
-            rc = dt.processTxn(hdr, txn);
+            rc = dt.processTxn(hdr, txn); /* 遍历重放事务log到内存数据库 */
         }
 
         /**

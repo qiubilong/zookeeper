@@ -67,12 +67,12 @@ public class FileSnap implements SnapShot {
      * deserialize a data tree from the most recent snapshot
      * @return the zxid of the snapshot
      */
-    public long deserialize(DataTree dt, Map<Long, Integer> sessions)
+    public long deserialize(DataTree dt, Map<Long, Integer> sessions) /* 从snapshot.xx文件列表中加载数据 */
             throws IOException {
         // we run through 100 snapshots (not all of them)
         // if we cannot get it running within 100 snapshots
         // we should  give up
-        List<File> snapList = findNValidSnapshots(100);
+        List<File> snapList = findNValidSnapshots(100);/* 排序的snapshot文件列表 */
         if (snapList.size() == 0) {
             return -1L;
         }
@@ -99,7 +99,7 @@ public class FileSnap implements SnapShot {
         if (!foundValid) {
             throw new IOException("Not able to find valid snapshots in " + snapDir);
         }
-        dt.lastProcessedZxid = Util.getZxidFromName(snap.getName(), SNAPSHOT_FILE_PREFIX);
+        dt.lastProcessedZxid = Util.getZxidFromName(snap.getName(), SNAPSHOT_FILE_PREFIX);/* 从最后一个snapshot文件名中解析出最大的事务提议id */
         return dt.lastProcessedZxid;
     }
 

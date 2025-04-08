@@ -143,7 +143,7 @@ public class QuorumPeerMain {
           ServerCnxnFactory cnxnFactory = null;
           ServerCnxnFactory secureCnxnFactory = null;
 
-          if (config.getClientPortAddress() != null) { /* 处理客户端请求服务 -- netty策略时 NettyServerCnxnFactory */
+          if (config.getClientPortAddress() != null) { /* 监听处理客户端请求2181 -- netty策略时 NettyServerCnxnFactory */
               cnxnFactory = ServerCnxnFactory.createFactory();
               cnxnFactory.configure(config.getClientPortAddress(),
                       config.getMaxClientCnxns(),
@@ -158,7 +158,7 @@ public class QuorumPeerMain {
           }
 
           quorumPeer = getQuorumPeer(); /* 服务节点对象 */
-          quorumPeer.setTxnFactory(new FileTxnSnapLog(
+          quorumPeer.setTxnFactory(new FileTxnSnapLog( /* 数据文件 */
                       config.getDataLogDir(),
                       config.getDataDir()));
           quorumPeer.enableLocalSessions(config.areLocalSessionsEnabled());
@@ -173,7 +173,7 @@ public class QuorumPeerMain {
           quorumPeer.setInitLimit(config.getInitLimit());
           quorumPeer.setSyncLimit(config.getSyncLimit());
           quorumPeer.setConfigFileName(config.getConfigFilename());
-          quorumPeer.setZKDatabase(new ZKDatabase(quorumPeer.getTxnFactory()));
+          quorumPeer.setZKDatabase(new ZKDatabase(quorumPeer.getTxnFactory()));/* 创建内存数据库 */
           quorumPeer.setQuorumVerifier(config.getQuorumVerifier(), false);
           if (config.getLastSeenQuorumVerifier()!=null) {
               quorumPeer.setLastSeenQuorumVerifier(config.getLastSeenQuorumVerifier(), false);

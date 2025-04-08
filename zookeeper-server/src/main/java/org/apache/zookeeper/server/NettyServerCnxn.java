@@ -476,7 +476,7 @@ public class NettyServerCnxn extends ServerCnxn {
                         if (initialized) {
                             // TODO: if zks.processPacket() is changed to take a ByteBuffer[],
                             // we could implement zero-copy queueing.
-                            zks.processPacket(this, bb);
+                            zks.processPacket(this, bb); /* 处理客户端请求 */
 
                             if (zks.shouldThrottle(outstandingCount.incrementAndGet())) {
                                 disableRecvNoWait();

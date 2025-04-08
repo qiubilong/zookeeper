@@ -116,7 +116,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                     if ((p.requestHeader != null) &&
                             (p.requestHeader.getType() != OpCode.ping) &&
                             (p.requestHeader.getType() != OpCode.auth)) {
-                        p.requestHeader.setXid(cnxn.getXid()); /* 设置请求消息事务id，响应时返回，用于关联请求消息 */
+                        p.requestHeader.setXid(cnxn.getXid()); /* 设置请求的事务id，响应时返回，用于关联请求 */
                     }
                     p.createBB();
                 }
@@ -127,7 +127,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                     if (p.requestHeader != null
                             && p.requestHeader.getType() != OpCode.ping
                             && p.requestHeader.getType() != OpCode.auth) {
-                        synchronized (pendingQueue) {/* 1.3、加入等待响应队列末尾，服务器响应时关联队头数据包，所以zookeeper客户端不是线程安全的 */
+                        synchronized (pendingQueue) {/* 1.3、加入等待响应队列末尾，服务器响应时取队头数据包，所以zookeeper客户端不是线程安全的 */
                             pendingQueue.add(p);
                         }
                     }

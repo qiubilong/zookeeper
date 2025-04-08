@@ -814,7 +814,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
             touch(si.cnxn);
             boolean validpacket = Request.isValid(si.type);
             if (validpacket) {
-                firstProcessor.processRequest(si);
+                firstProcessor.processRequest(si); /* 处理客户端请求 - PrepRequestProcessor */
                 if (si.cnxn != null) {
                     incInProcess();
                 }
@@ -1145,7 +1145,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
                 // Always treat packet from the client as a possible
                 // local request.
                 setLocalSessionFlag(si);
-                submitRequest(si);
+                submitRequest(si); /* 处理客户端请求 */
             }
         }
         cnxn.incrOutstandingRequests(h);

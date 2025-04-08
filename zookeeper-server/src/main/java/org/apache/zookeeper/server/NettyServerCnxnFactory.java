@@ -102,7 +102,7 @@ public class NettyServerCnxnFactory extends ServerCnxnFactory {
     // Access to ipMap or to any Set contained in the map needs to be
     // protected with synchronized (ipMap) { ... }
     private final Map<InetAddress, Set<NettyServerCnxn>> ipMap = new HashMap<>();
-    private InetSocketAddress localAddress; /* 监听地址端口 2181 */
+    private InetSocketAddress localAddress; /* 监听客户端请求地址 2181 */
     private int maxClientCnxns = 60;
     private final ClientX509Util x509Util;
 
@@ -250,7 +250,7 @@ public class NettyServerCnxnFactory extends ServerCnxnFactory {
         }
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception { /* 服务端（2181），收到客户端请求 */
             try {
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("message received called {}", msg);
@@ -263,7 +263,7 @@ public class NettyServerCnxnFactory extends ServerCnxnFactory {
                     if (cnxn == null) {
                         LOG.error("channelRead() on a closed or closing NettyServerCnxn");
                     } else {
-                        cnxn.processMessage((ByteBuf) msg);
+                        cnxn.processMessage((ByteBuf) msg);/* 处理客户端请求 */
                     }
                 } catch (Exception ex) {
                     LOG.error("Unexpected exception in receive", ex);
@@ -415,7 +415,7 @@ public class NettyServerCnxnFactory extends ServerCnxnFactory {
                         } else if (shouldUsePortUnification) {
                             initSSL(pipeline, true);
                         }
-                        pipeline.addLast("servercnxnfactory", channelHandler);
+                        pipeline.addLast("servercnxnfactory", channelHandler); /* 消息处理器 */
                     }
                 });
         this.bootstrap = configureBootstrapAllocator(bootstrap);

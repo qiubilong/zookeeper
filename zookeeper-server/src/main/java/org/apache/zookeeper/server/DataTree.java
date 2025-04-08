@@ -224,7 +224,7 @@ public class DataTree {
     private final DataNode quotaDataNode = new DataNode(new byte[0], -1L, new StatPersisted());
 
     public DataTree() {
-        /* Rather than fight it, let root have an alias */
+        /**  Rather than fight it, let root have an alias */
         nodes.put("", root);
         nodes.put(rootZookeeper, root);
 
@@ -783,7 +783,7 @@ public class DataTree {
 
     }
 
-    public volatile long lastProcessedZxid = 0;
+    public volatile long lastProcessedZxid = 0; /* 已经snapshot的最大事务ID */
 
     public ProcessTxnResult processTxn(TxnHeader header, Record txn) {
         return this.processTxn(header, txn, false);

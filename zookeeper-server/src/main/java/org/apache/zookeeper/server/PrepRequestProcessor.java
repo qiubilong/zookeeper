@@ -106,7 +106,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
      */
     private static  boolean failCreate = false;
 
-    LinkedBlockingQueue<Request> submittedRequests = new LinkedBlockingQueue<Request>();
+    LinkedBlockingQueue<Request> submittedRequests = new LinkedBlockingQueue<Request>(); /* 客户端请求消息队列 */
 
     private final RequestProcessor nextProcessor;
 

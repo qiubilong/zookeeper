@@ -128,11 +128,11 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
      * bootup and only thrown away in case of a truncate
      * message from the leader
      */
-    private ZKDatabase zkDb;
+    private ZKDatabase zkDb; /* Zookeeper内存数据库 */
 
     public static final class AddressTuple {
-        public final InetSocketAddress quorumAddr;  /* Leader与Follow 数据交换地址端口 */
-        public final InetSocketAddress electionAddr;/* 选举地址端口 */
+        public final InetSocketAddress quorumAddr;  /* Leader与Follow 数据交换地址端口 - 2888 */
+        public final InetSocketAddress electionAddr;/* 选举地址端口 - 3888 */
         public final InetSocketAddress clientAddr;
 
         public AddressTuple(InetSocketAddress quorumAddr, InetSocketAddress electionAddr, InetSocketAddress clientAddr) {
@@ -884,8 +884,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         if (!getView().containsKey(myid)) {
             throw new RuntimeException("My id " + myid + " not in the peer list");
          }
-        loadDataBase();
-        startServerCnxnFactory(); /* 启动处理客户端请求服务 - 2181 */
+        loadDataBase();//从snapshot和log文件中加载数据
+        startServerCnxnFactory(); /* 启动监听客户端请求端口 - 2181 */
         try {
             adminServer.start(); /*  管理后台 -  http://localhost:8080/commands */
         } catch (AdminServerException e) {
@@ -898,13 +898,13 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     private void loadDataBase() {
         try {
-            zkDb.loadDataBase();
+            zkDb.loadDataBase();/* 从snapshot和log日志中加载数据 */
 
             // load the epochs
             long lastProcessedZxid = zkDb.getDataTree().lastProcessedZxid;
             long epochOfZxid = ZxidUtils.getEpochFromZxid(lastProcessedZxid);
             try {
-                currentEpoch = readLongFromFile(CURRENT_EPOCH_FILENAME);
+                currentEpoch = readLongFromFile(CURRENT_EPOCH_FILENAME);//表示服务器当前已提交并生效的Leader任期号（Epoch），新Leader被选举后，集群的currentEpoch会递增，防止旧Leader复活。新Leader完成选举并同步数据后，所有服务器更新currentEpoch为新值。
             } catch(FileNotFoundException e) {
             	// pick a reasonable epoch number
             	// this should only happen once when moving to a
@@ -919,8 +919,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                 throw new IOException("The current epoch, " + ZxidUtils.zxidToString(currentEpoch) + ", is older than the last zxid, " + lastProcessedZxid);
             }
             try {
-                acceptedEpoch = readLongFromFile(ACCEPTED_EPOCH_FILENAME);
-            } catch(FileNotFoundException e) {
+                acceptedEpoch = readLongFromFile(ACCEPTED_EPOCH_FILENAME);//在选举阶段，当服务器投票支持某个候选者时，会将自己的acceptedEpoch更新为候选者的Epoch值（但此时currentEpoch仍未更新）
+            } catch(FileNotFoundException e) {                            //仅在选举成功后，currentEpoch才会被更新为与acceptedEpoch一致的值。
             	// pick a reasonable epoch number
             	// this should only happen once when moving to a
             	// new code version
@@ -1262,7 +1262,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                 case LEADING:  /* 2.1 选举成功 - leader角色 */
                     LOG.info("LEADING");
                     try {
-                        setLeader(makeLeader(logFactory));
+                        setLeader(makeLeader(logFactory));//LeaderZooKeeperServer
                         leader.lead(); /* 循环广播ping心跳给所有follow节点，直到异常退出 */
                         setLeader(null);
                     } catch (Exception e) {
@@ -1772,7 +1772,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     private void startServerCnxnFactory() {
         if (cnxnFactory != null) {
-            cnxnFactory.start(); /* 处理客户端请求 - 2181*/
+            cnxnFactory.start(); /* 监听客户端请求 - 2181*/
         }
         if (secureCnxnFactory != null) {
             secureCnxnFactory.start();
