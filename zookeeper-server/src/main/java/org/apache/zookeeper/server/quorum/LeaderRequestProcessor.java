@@ -66,7 +66,7 @@ public class LeaderRequestProcessor implements RequestProcessor {
             LOG.error("Unexpected error in upgrade", ie);
         }
         if (upgradeRequest != null) {
-            nextProcessor.processRequest(upgradeRequest);
+            nextProcessor.processRequest(upgradeRequest);/* PrepRequestProcessor */
         }
 
         nextProcessor.processRequest(request);

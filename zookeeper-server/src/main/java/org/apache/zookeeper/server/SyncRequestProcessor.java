@@ -48,7 +48,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
         RequestProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(SyncRequestProcessor.class);
     private final ZooKeeperServer zks;
-    private final LinkedBlockingQueue<Request> queuedRequests =
+    private final LinkedBlockingQueue<Request> queuedRequests = /* 即将刷盘的事务提议队列 */
         new LinkedBlockingQueue<Request>();
     private final RequestProcessor nextProcessor;
 
@@ -74,7 +74,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
         super("SyncThread:" + zks.getServerId(), zks
                 .getZooKeeperServerListener());
         this.zks = zks;
-        this.nextProcessor = nextProcessor;
+        this.nextProcessor = nextProcessor;/* 事务提议写入本地日志后，Ack事务提议 --  AckRequestProcessor */
         running = true;
     }
 
@@ -106,11 +106,11 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
             while (true) {
                 Request si = null;
                 if (toFlush.isEmpty()) {
-                    si = queuedRequests.take();
+                    si = queuedRequests.take();//消费一条事务提议请求
                 } else {
                     si = queuedRequests.poll();
                     if (si == null) {
-                        flush(toFlush);
+                        flush(toFlush);/* 2、（只有一条数据）事务提议，刷盘 */
                         continue;
                     }
                 }
@@ -119,9 +119,9 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                 }
                 if (si != null) {
                     // track the number of records written to the log
-                    if (zks.getZKDatabase().append(si)) {
+                    if (zks.getZKDatabase().append(si)) { /* 1、事务提议，顺序写入磁盘 */
                         logCount++;
-                        if (logCount > (snapCount / 2 + randRoll)) {
+                        if (logCount > (snapCount / 2 + randRoll)) {//snapCount=100000，相当于 5万到10万写一次数据库内存快照
                             randRoll = r.nextInt(snapCount/2);
                             // roll the log
                             zks.getZKDatabase().rollLog();
@@ -148,7 +148,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                         // flushes (writes), then just pass this to the next
                         // processor
                         if (nextProcessor != null) {
-                            nextProcessor.processRequest(si);
+                            nextProcessor.processRequest(si); /* （只有一条数据）3、事务提议刷入磁盘后，ACK事务提议 -- AckRequestProcessor */
                             if (nextProcessor instanceof Flushable) {
                                 ((Flushable)nextProcessor).flush();
                             }
@@ -157,7 +157,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                     }
                     toFlush.add(si);
                     if (toFlush.size() > 1000) {
-                        flush(toFlush);
+                        flush(toFlush); /* 多条事务提议批量刷盘 */
                     }
                 }
             }
@@ -175,11 +175,11 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
         if (toFlush.isEmpty())
             return;
 
-        zks.getZKDatabase().commit();
+        zks.getZKDatabase().commit();/* 事务提议刷盘 */
         while (!toFlush.isEmpty()) {
             Request i = toFlush.remove();
             if (nextProcessor != null) {
-                nextProcessor.processRequest(i);
+                nextProcessor.processRequest(i); /* 事务提议刷盘后，Leader发起事务提议ACK -- AckRequestProcessor */
             }
         }
         if (nextProcessor != null && nextProcessor instanceof Flushable) {

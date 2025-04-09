@@ -82,7 +82,7 @@ public class ZKDatabase {
     public static final double DEFAULT_SNAPSHOT_SIZE_FACTOR = 0.33;
     private double snapshotSizeFactor;
 
-    public static final int commitLogCount = 500;
+    public static final int commitLogCount = 500; /* 维护最近一段时间提交的事务，用于主从同步 */
     protected static int commitLogBuffer = 700;
     protected LinkedList<Proposal> committedLog = new LinkedList<Proposal>();
     protected ReentrantReadWriteLock logLock = new ReentrantReadWriteLock();
@@ -569,7 +569,7 @@ public class ZKDatabase {
      * @return true if the append was succesfull and false if not
      */
     public boolean append(Request si) throws IOException {
-        return this.snapLog.append(si);
+        return this.snapLog.append(si);/* 事务提议，顺序写入磁盘 */
     }
 
     /**
@@ -584,7 +584,7 @@ public class ZKDatabase {
      * @throws IOException
      */
     public void commit() throws IOException {
-        this.snapLog.commit();
+        this.snapLog.commit();/* 事务提议刷盘 */
     }
 
     /**

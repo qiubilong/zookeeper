@@ -482,7 +482,7 @@ public class FileTxnSnapLog { /* zookeeper日志文件 */
      * @throws IOException
      */
     public boolean append(Request si) throws IOException {
-        return txnLog.append(si.getHdr(), si.getTxn());
+        return txnLog.append(si.getHdr(), si.getTxn());/* 事务提议，顺序写入磁盘 */
     }
 
     /**
@@ -490,7 +490,7 @@ public class FileTxnSnapLog { /* zookeeper日志文件 */
      * @throws IOException
      */
     public void commit() throws IOException {
-        txnLog.commit();
+        txnLog.commit();/* 事务提议刷盘 */
     }
 
     /**

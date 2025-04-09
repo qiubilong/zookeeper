@@ -200,7 +200,7 @@ public class FileTxnLog implements TxnLog, Closeable {
      * @param txn the transaction part of the entry
      * returns true iff something appended, otw false
      */
-    public synchronized boolean append(TxnHeader hdr, Record txn)
+    public synchronized boolean append(TxnHeader hdr, Record txn) /* 事务提议，顺序写入磁盘 */
         throws IOException
     {
         if (hdr == null) {
@@ -238,7 +238,7 @@ public class FileTxnLog implements TxnLog, Closeable {
         Checksum crc = makeChecksumAlgorithm();
         crc.update(buf, 0, buf.length);
         oa.writeLong(crc.getValue(), "txnEntryCRC");
-        Util.writeTxnBytes(oa, buf);
+        Util.writeTxnBytes(oa, buf);/* 事务提议，写入磁盘 */
 
         return true;
     }
@@ -325,7 +325,7 @@ public class FileTxnLog implements TxnLog, Closeable {
      */
     public synchronized void commit() throws IOException {
         if (logStream != null) {
-            logStream.flush();
+            logStream.flush();/* 事务提议刷盘 */
         }
         for (FileOutputStream log : streamsToFlush) {
             log.flush();

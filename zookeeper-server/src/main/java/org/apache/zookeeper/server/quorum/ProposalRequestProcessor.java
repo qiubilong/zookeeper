@@ -43,8 +43,8 @@ public class ProposalRequestProcessor implements RequestProcessor {
             RequestProcessor nextProcessor) {
         this.zks = zks;
         this.nextProcessor = nextProcessor;
-        AckRequestProcessor ackProcessor = new AckRequestProcessor(zks.getLeader());
-        syncProcessor = new SyncRequestProcessor(zks, ackProcessor);
+        AckRequestProcessor ackProcessor = new AckRequestProcessor(zks.getLeader());/* Leader将事务提议写入本地日志后， ACK事务提议  */
+        syncProcessor = new SyncRequestProcessor(zks, ackProcessor);/* 将事务提议写入本地日志 */
     }
 
     /**
@@ -71,15 +71,15 @@ public class ProposalRequestProcessor implements RequestProcessor {
         if (request instanceof LearnerSyncRequest){
             zks.getLeader().processSync((LearnerSyncRequest)request);
         } else {
-            nextProcessor.processRequest(request);
+            nextProcessor.processRequest(request); /* CommitProcessor */
             if (request.getHdr() != null) {
                 // We need to sync and get consensus on any transactions
                 try {
-                    zks.getLeader().propose(request);
+                    zks.getLeader().propose(request); /* 事务提议，放入所有Follower节点的消息队列，异步发送 */
                 } catch (XidRolloverException e) {
                     throw new RequestProcessorException(e.getMessage(), e);
                 }
-                syncProcessor.processRequest(request);
+                syncProcessor.processRequest(request);/* 事务提议 ，异步写入自己文件 */
             }
         }
     }

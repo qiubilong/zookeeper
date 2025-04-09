@@ -369,7 +369,7 @@ public class Leader {
      */
     final static int INFORMANDACTIVATE = 19;
     
-    final ConcurrentMap<Long, Proposal> outstandingProposals = new ConcurrentHashMap<Long, Proposal>();
+    final ConcurrentMap<Long, Proposal> outstandingProposals = new ConcurrentHashMap<Long, Proposal>();/* 提议阶段的事务请求 */
 
     private final ConcurrentLinkedQueue<Proposal> toBeApplied = new ConcurrentLinkedQueue<Proposal>();
 
@@ -776,7 +776,7 @@ public class Leader {
        // in order to be committed, a proposal must be accepted by a quorum.
        //
        // getting a quorum from all necessary configurations.
-        if (!p.hasAllQuorums()) {
+        if (!p.hasAllQuorums()) {/* 判断事务提议是否收到超过半数节点ack */
            return false;                 
         }
         
@@ -821,10 +821,10 @@ public class Leader {
             informAndActivate(p, designatedLeader);
             //turnOffFollowers();
         } else {
-            commit(zxid);
+            commit(zxid);/*事务提议收到超过半数节点ack后，发起广播提交事务 */
             inform(p);
         }
-        zk.commitProcessor.commit(p.request);
+        zk.commitProcessor.commit(p.request);/* Leader提交事务 */
         if(pendingSyncs.containsKey(zxid)){
             for(LearnerSyncRequest r: pendingSyncs.remove(zxid)) {
                 sendSync(r);
@@ -856,7 +856,7 @@ public class Leader {
         }
         
         if ((zxid & 0xffffffffL) == 0) {
-            /*
+            /**
              * We no longer process NEWLEADER ack with this method. However,
              * the learner sends an ack back to the leader after it gets
              * UPTODATE, so we just ignore the message.
@@ -886,13 +886,13 @@ public class Leader {
             return;
         }
         
-        p.addAck(sid);        
-        /*if (LOG.isDebugEnabled()) {
+        p.addAck(sid); /* sid节点ack事务提议 */
+        /**if (LOG.isDebugEnabled()) {
             LOG.debug("Count for zxid: 0x{} is {}",
                     Long.toHexString(zxid), p.ackSet.size());
         }*/
         
-        boolean hasCommitted = tryToCommit(p, zxid, followerAddr);
+        boolean hasCommitted = tryToCommit(p, zxid, followerAddr);/* 超过多半数节点ACK事务提议，则发起commit提交事务 */
 
         // If p is a reconfiguration, multiple other operations may be ready to be committed,
         // since operations wait for different sets of acks.
@@ -940,13 +940,13 @@ public class Leader {
             this.next = next;
         }
 
-        /*
+        /**
          * (non-Javadoc)
          *
          * @see org.apache.zookeeper.server.RequestProcessor#processRequest(org.apache.zookeeper.server.Request)
          */
         public void processRequest(Request request) throws RequestProcessorException {
-            next.processRequest(request);
+            next.processRequest(request);/* 提交事务&响应客户端 - FinalRequestProcessor */
 
             // The only requests that should be on toBeApplied are write
             // requests, for which we will have a hdr. We can't simply use
@@ -967,7 +967,7 @@ public class Leader {
             }
         }
 
-        /*
+        /**
          * (non-Javadoc)
          *
          * @see org.apache.zookeeper.server.RequestProcessor#shutdown()
@@ -986,8 +986,8 @@ public class Leader {
      */
     void sendPacket(QuorumPacket qp) {
         synchronized (forwardingFollowers) {
-            for (LearnerHandler f : forwardingFollowers) {
-                f.queuePacket(qp);
+            for (LearnerHandler f : forwardingFollowers) {/* 广播事务提议 */
+                f.queuePacket(qp);//存入内存队列
             }
         }
     }
@@ -1013,7 +1013,7 @@ public class Leader {
             lastCommitted = zxid;
         }
         QuorumPacket qp = new QuorumPacket(Leader.COMMIT, zxid, null, null);
-        sendPacket(qp);
+        sendPacket(qp);/* 广播提交事务 */
     }
 
     //commit and send some info
@@ -1115,8 +1115,8 @@ public class Leader {
             }
 
             lastProposed = p.packet.getZxid();
-            outstandingProposals.put(lastProposed, p);
-            sendPacket(pp);
+            outstandingProposals.put(lastProposed, p);//提议阶段的事务请求
+            sendPacket(pp); /* 广播事务提议 */
         }
         return p;
     }

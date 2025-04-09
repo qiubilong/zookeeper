@@ -131,7 +131,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
     public void run() {
         try {
             while (true) {
-                Request request = submittedRequests.take();
+                Request request = submittedRequests.take(); /* 阻塞等待消费消息 */
                 long traceMask = ZooTrace.CLIENT_REQUEST_TRACE_MASK;
                 if (request.type == OpCode.ping) {
                     traceMask = ZooTrace.CLIENT_PING_TRACE_MASK;
@@ -142,7 +142,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
                 if (Request.requestOfDeath == request) {
                     break;
                 }
-                pRequest(request);
+                pRequest(request);/* 处理消息 -- 传递到下一个 ProposalRequestProcessor */
             }
         } catch (RequestProcessorException e) {
             if (e.getCause() instanceof XidRolloverException) {
@@ -791,7 +791,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
                     int type;
                     Record txn;
 
-                    /* If we've already failed one of the ops, don't bother
+                    /** If we've already failed one of the ops, don't bother
                      * trying the rest as we know it's going to fail and it
                      * would be confusing in the logfiles.
                      */
@@ -800,7 +800,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
                         txn = new ErrorTxn(Code.RUNTIMEINCONSISTENCY.intValue());
                     }
 
-                    /* Prep the request and convert to a Txn */
+                    /** Prep the request and convert to a Txn */
                     else {
                         try {
                             pRequest2Txn(op.getType(), zxid, request, subrequest, false);
@@ -819,7 +819,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
 
                             request.setException(e);
 
-                            /* Rollback change records from failed multi-op */
+                            /** Rollback change records from failed multi-op */
                             rollbackPendingChanges(zxid, pendingChanges);
                         }
                     }
@@ -902,7 +902,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
             }
         }
         request.zxid = zks.getZxid();
-        nextProcessor.processRequest(request);
+        nextProcessor.processRequest(request); /* 下一个处理器 - ProposalRequestProcessor  */
     }
 
     private List<ACL> removeDuplicates(List<ACL> acl) {

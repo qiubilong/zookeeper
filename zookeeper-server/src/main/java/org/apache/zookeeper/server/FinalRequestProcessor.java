@@ -109,7 +109,7 @@ public class FinalRequestProcessor implements RequestProcessor {
         ProcessTxnResult rc = null;
         synchronized (zks.outstandingChanges) {
             // Need to process local session requests
-            rc = zks.processTxn(request);
+            rc = zks.processTxn(request);/* 提交事务，写入内存数据库 */
 
             // request.hdr is set for write requests, which are the only ones
             // that add to outstandingChanges.
@@ -131,7 +131,7 @@ public class FinalRequestProcessor implements RequestProcessor {
             }
 
             // do not add non quorum packets to the queue.
-            if (request.isQuorum()) {
+            if (request.isQuorum()) {//维护最近一段时间提交的事务，用于主从同步
                 zks.getZKDatabase().addCommittedProposal(request);
             }
         }
@@ -162,7 +162,7 @@ public class FinalRequestProcessor implements RequestProcessor {
         Record rsp = null;
         try {
             if (request.getHdr() != null && request.getHdr().getType() == OpCode.error) {
-                /*
+                /**
                  * When local session upgrading is disabled, leader will
                  * reject the ephemeral node creation due to session expire.
                  * However, if this is the follower that issue the request,
@@ -489,7 +489,7 @@ public class FinalRequestProcessor implements RequestProcessor {
                     request.createTime, Time.currentElapsedTime());
 
         try {
-            cnxn.sendResponse(hdr, rsp, "response");
+            cnxn.sendResponse(hdr, rsp, "response"); /* 响应客户端请求 */
             if (request.type == OpCode.closeSession) {
                 cnxn.sendCloseSession();
             }

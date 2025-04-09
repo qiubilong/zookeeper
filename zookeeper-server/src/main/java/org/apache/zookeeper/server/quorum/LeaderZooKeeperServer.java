@@ -61,20 +61,20 @@ public class LeaderZooKeeperServer extends QuorumZooKeeperServer {
         return self.leader;
     }
 
-    @Override
+    @Override /* 客户端请求处理链 */
     protected void setupRequestProcessors() {
-        RequestProcessor finalProcessor = new FinalRequestProcessor(this);
+        RequestProcessor finalProcessor = new FinalRequestProcessor(this); /* 5、commit提交事务&响应客户端 */
         RequestProcessor toBeAppliedProcessor = new Leader.ToBeAppliedRequestProcessor(finalProcessor, getLeader());
-        commitProcessor = new CommitProcessor(toBeAppliedProcessor,
+        commitProcessor = new CommitProcessor(toBeAppliedProcessor, /* 4、阻塞等待多半数节点ACK事务提议 */
                 Long.toString(getServerId()), false,
                 getZooKeeperServerListener());
         commitProcessor.start();
-        ProposalRequestProcessor proposalProcessor = new ProposalRequestProcessor(this,
+        ProposalRequestProcessor proposalProcessor = new ProposalRequestProcessor(this, /* 3、广播事务提议，同时写入自己本地日志 */
                 commitProcessor);
         proposalProcessor.initialize();
-        prepRequestProcessor = new PrepRequestProcessor(this, proposalProcessor);
+        prepRequestProcessor = new PrepRequestProcessor(this, proposalProcessor);/* 2、异步消费事务提议请求  */
         prepRequestProcessor.start();
-        firstProcessor = new LeaderRequestProcessor(this, prepRequestProcessor);
+        firstProcessor = new LeaderRequestProcessor(this, prepRequestProcessor);/* 1、事务提议存到PrepRequestProcessor消息队列 */
 
         setupContainerManager();
     }

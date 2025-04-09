@@ -85,7 +85,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
     /**
      * Requests that have been committed.
      */
-    protected final LinkedBlockingQueue<Request> committedRequests =
+    protected final LinkedBlockingQueue<Request> committedRequests = /* 已经提交的事务 */
         new LinkedBlockingQueue<Request>();
 
     /** Request for which we are currently awaiting a commit */
@@ -98,7 +98,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
     /** The number of requests currently being processed */
     protected AtomicInteger numRequestsProcessing = new AtomicInteger(0);
 
-    RequestProcessor nextProcessor;
+    RequestProcessor nextProcessor;//Leader.ToBeAppliedRequestProcessor
 
     protected volatile boolean stopped = true;
     private long workerShutdownTimeoutMS;
@@ -167,7 +167,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                     }
                 }
 
-                /*
+                /**
                  * Processing queuedRequests: Process the next requests until we
                  * find one for which we need to wait for a commit. We cannot
                  * process a read request while we are processing write request.
@@ -182,7 +182,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                     }
                 }
 
-                /*
+                /**
                  * Processing committedRequests: check and see if the commit
                  * came in for the pending request. We can only commit a
                  * request when there is no other request being processed.
@@ -195,7 +195,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
         LOG.info("CommitProcessor exited loop!");
     }
 
-    /*
+    /**
      * Separated this method from the main run loop
      * for test purposes (ZOOKEEPER-1863)
      */
@@ -205,7 +205,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
         if (!stopped && !isProcessingRequest() &&
                 (committedRequests.peek() != null)) {
 
-            /*
+            /**
              * ZOOKEEPER-1863: continue only if there is no new request
              * waiting in queuedRequests or it is waiting for a
              * commit. 
@@ -213,9 +213,9 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
             if ( !isWaitingForCommit() && !queuedRequests.isEmpty()) {
                 return;
             }
-            request = committedRequests.poll();
+            request = committedRequests.poll();/* 消费一个已经多半数ack的事务 */
 
-            /*
+            /**
              * We match with nextPending so that we can move to the
              * next request when it is committed. We also want to
              * use nextPending because it has the cnxn member set
@@ -235,7 +235,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                 // nextProcessor returns.
                 currentlyCommitting.set(pending);
                 nextPending.set(null);
-                sendToNextProcessor(pending);
+                sendToNextProcessor(pending);/* 提交ack的事务 */
             } else {
                 // this request came from someone else so just
                 // send the commit packet
@@ -270,7 +270,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
      */
     private void sendToNextProcessor(Request request) {
         numRequestsProcessing.incrementAndGet();
-        workerPool.schedule(new CommitWorkRequest(request), request.sessionId);
+        workerPool.schedule(new CommitWorkRequest(request), request.sessionId);/* 提交ack的事务 */
     }
 
     /**
@@ -295,13 +295,13 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
 
         public void doWork() throws RequestProcessorException {
             try {
-                nextProcessor.processRequest(request);
+                nextProcessor.processRequest(request);/* 提交事务&响应客户端，Leader.ToBeAppliedRequestProcessor */
             } finally {
                 // If this request is the commit request that was blocking
                 // the processor, clear.
                 currentlyCommitting.compareAndSet(request, null);
 
-                /*
+                /**
                  * Decrement outstanding request count. The processor may be
                  * blocked at the moment because it is waiting for the pipeline
                  * to drain. In that case, wake it up if there are pending
