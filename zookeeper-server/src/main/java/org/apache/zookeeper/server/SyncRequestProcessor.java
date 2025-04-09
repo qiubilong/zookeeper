@@ -148,7 +148,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                         // flushes (writes), then just pass this to the next
                         // processor
                         if (nextProcessor != null) {
-                            nextProcessor.processRequest(si); /* （只有一条数据）3、事务提议刷入磁盘后，ACK事务提议 -- AckRequestProcessor */
+                            nextProcessor.processRequest(si); /* （只有一条数据）3、事务提议刷入磁盘后，ACK事务提议 -- Leader:AckRequestProcessor  / Follower:SendAckRequestProcessor   */
                             if (nextProcessor instanceof Flushable) {
                                 ((Flushable)nextProcessor).flush();
                             }

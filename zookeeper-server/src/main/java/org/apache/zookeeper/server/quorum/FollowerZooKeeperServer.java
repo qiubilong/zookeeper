@@ -44,7 +44,7 @@ public class FollowerZooKeeperServer extends LearnerZooKeeperServer {
     private static final Logger LOG =
         LoggerFactory.getLogger(FollowerZooKeeperServer.class);
 
-    /*
+    /**
      * Pending sync requests
      */
     ConcurrentLinkedQueue<Request> pendingSyncs;
@@ -65,7 +65,7 @@ public class FollowerZooKeeperServer extends LearnerZooKeeperServer {
         return self.follower;
     }
 
-    @Override
+    @Override /* Follower请求处理链 */
     protected void setupRequestProcessors() {
         RequestProcessor finalProcessor = new FinalRequestProcessor(this);
         commitProcessor = new CommitProcessor(finalProcessor,
@@ -80,7 +80,7 @@ public class FollowerZooKeeperServer extends LearnerZooKeeperServer {
 
     LinkedBlockingQueue<Request> pendingTxns = new LinkedBlockingQueue<Request>();
 
-    public void logRequest(TxnHeader hdr, Record txn) {
+    public void logRequest(TxnHeader hdr, Record txn) { /* 事务提议刷盘 */
         Request request = new Request(hdr.getClientId(), hdr.getCxid(), hdr.getType(), hdr, txn, hdr.getZxid());
         if ((request.zxid & 0xffffffffL) != 0) {
             pendingTxns.add(request);

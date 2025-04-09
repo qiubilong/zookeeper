@@ -569,7 +569,7 @@ public class Learner {
         ack.setZxid(ZxidUtils.makeZxid(newEpoch, 0));
         writePacket(ack, true);
         sock.setSoTimeout(self.tickTime * self.syncLimit);
-        zk.startup();
+        zk.startup();/* 数据同步完成后，初始化Follower请求处理链 */
         /**
          * Update the election vote here to ensure that all members of the
          * ensemble report the same vote to new servers that start up and

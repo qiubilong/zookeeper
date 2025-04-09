@@ -37,7 +37,7 @@ public class SendAckRequestProcessor implements RequestProcessor, Flushable {
         this.learner = peer;
     }
 
-    public void processRequest(Request si) {
+    public void processRequest(Request si) { /* ACK主节点Leader的事务提议 */
         if(si.type != OpCode.sync){
             QuorumPacket qp = new QuorumPacket(Leader.ACK, si.getHdr().getZxid(), null,
                 null);
