@@ -179,7 +179,7 @@ public class QuorumPeerMain {
               quorumPeer.setLastSeenQuorumVerifier(config.getLastSeenQuorumVerifier(), false);
           }
           quorumPeer.initConfigInZKDatabase();
-          quorumPeer.setCnxnFactory(cnxnFactory);/* 处理客户端请求服务 */
+          quorumPeer.setCnxnFactory(cnxnFactory);/* 处理客户端请求 */
           quorumPeer.setSecureCnxnFactory(secureCnxnFactory);
           quorumPeer.setSslQuorum(config.isSslQuorum());
           quorumPeer.setUsePortUnification(config.shouldUsePortUnification());

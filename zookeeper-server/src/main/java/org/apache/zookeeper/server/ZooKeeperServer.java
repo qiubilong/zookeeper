@@ -1213,7 +1213,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         int opCode = request != null ? request.type : hdr.getType();
         long sessionId = request != null ? request.sessionId : hdr.getClientId();
         if (hdr != null) {
-            rc = getZKDatabase().processTxn(hdr, txn);
+            rc = getZKDatabase().processTxn(hdr, txn);/* 提交事务写入内存数据库 & 触发watcher */
         } else {
             rc = new ProcessTxnResult();
         }

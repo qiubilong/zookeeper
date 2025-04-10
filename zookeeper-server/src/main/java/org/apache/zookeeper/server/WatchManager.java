@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 class WatchManager {
     private static final Logger LOG = LoggerFactory.getLogger(WatchManager.class);
 
-    private final HashMap<String, HashSet<Watcher>> watchTable =
+    private final HashMap<String, HashSet<Watcher>> watchTable = /* watcher监听集合 */
         new HashMap<String, HashSet<Watcher>>();
 
     private final HashMap<Watcher, HashSet<String>> watch2Paths =
@@ -99,7 +99,7 @@ class WatchManager {
                 KeeperState.SyncConnected, path);
         HashSet<Watcher> watchers;
         synchronized (this) {
-            watchers = watchTable.remove(path);
+            watchers = watchTable.remove(path); /* 触发一次性watcher */
             if (watchers == null || watchers.isEmpty()) {
                 if (LOG.isTraceEnabled()) {
                     ZooTrace.logTraceMessage(LOG,
@@ -119,7 +119,7 @@ class WatchManager {
             if (supress != null && supress.contains(w)) {
                 continue;
             }
-            w.process(e);
+            w.process(e); /* 触发watcher -- NettyServerCnxn */
         }
         return watchers;
     }

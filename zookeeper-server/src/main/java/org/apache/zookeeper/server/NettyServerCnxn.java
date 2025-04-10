@@ -143,7 +143,7 @@ public class NettyServerCnxn extends ServerCnxn {
     }
 
     @Override
-    public void process(WatchedEvent event) {
+    public void process(WatchedEvent event) { /* 触发watcher */
         ReplyHeader h = new ReplyHeader(-1, -1L, 0);
         if (LOG.isTraceEnabled()) {
             ZooTrace.logTraceMessage(LOG, ZooTrace.EVENT_DELIVERY_TRACE_MASK,
@@ -357,7 +357,7 @@ public class NettyServerCnxn extends ServerCnxn {
                 appendToQueuedBuffer(buf.retainedDuplicate());
                 processQueuedBuffer();
             } else {
-                receiveMessage(buf);
+                receiveMessage(buf);/* 处理客户端请求 */
                 // Have to check !closingChannel, because an error in
                 // receiveMessage() could have led to close() being called.
                 if (!closingChannel && buf.isReadable()) {
@@ -391,7 +391,7 @@ public class NettyServerCnxn extends ServerCnxn {
                         Long.toHexString(sessionId),
                         ByteBufUtil.hexDump(queuedBuffer));
             }
-            receiveMessage(queuedBuffer);
+            receiveMessage(queuedBuffer);/* 处理客户端请求 */
             if (closingChannel) {
                 // close() could have been called if receiveMessage() failed
                 LOG.debug("Processed queue - channel closed, dropping remaining bytes");
@@ -430,7 +430,7 @@ public class NettyServerCnxn extends ServerCnxn {
      * method returns.
      * @param message the message bytes to process.
      */
-    private void receiveMessage(ByteBuf message) {
+    private void receiveMessage(ByteBuf message) {/* 处理客户端请求 */
         checkIsInEventLoop("receiveMessage");
         try {
             while(message.isReadable() && !throttled.get()) {

@@ -94,7 +94,7 @@ public class FinalRequestProcessor implements RequestProcessor {
         this.zks = zks;
     }
 
-    public void processRequest(Request request) {
+    public void processRequest(Request request) { /* 提交事务&注册watcher&响应客户端 */
         if (LOG.isDebugEnabled()) {
             LOG.debug("Processing request:: " + request);
         }
@@ -109,7 +109,7 @@ public class FinalRequestProcessor implements RequestProcessor {
         ProcessTxnResult rc = null;
         synchronized (zks.outstandingChanges) {
             // Need to process local session requests
-            rc = zks.processTxn(request);/* 提交事务，写入内存数据库 */
+            rc = zks.processTxn(request);/* 提交事务写入内存数据库 & 触发watcher */
 
             // request.hdr is set for write requests, which are the only ones
             // that add to outstandingChanges.
@@ -332,7 +332,7 @@ public class FinalRequestProcessor implements RequestProcessor {
                         request.authInfo);
                 Stat stat = new Stat();
                 byte b[] = zks.getZKDatabase().getData(getDataRequest.getPath(), stat,
-                        getDataRequest.getWatch() ? cnxn : null);
+                        getDataRequest.getWatch() ? cnxn : null);/* 注册watcher监听器 */
                 rsp = new GetDataResponse(b, stat);
                 break;
             }

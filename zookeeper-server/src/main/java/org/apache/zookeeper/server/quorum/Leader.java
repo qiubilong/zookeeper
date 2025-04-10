@@ -946,7 +946,7 @@ public class Leader {
          * @see org.apache.zookeeper.server.RequestProcessor#processRequest(org.apache.zookeeper.server.Request)
          */
         public void processRequest(Request request) throws RequestProcessorException {
-            next.processRequest(request);/* 提交事务&响应客户端 - FinalRequestProcessor */
+            next.processRequest(request);/* 提交事务&注册watcher&响应客户端 - FinalRequestProcessor */
 
             // The only requests that should be on toBeApplied are write
             // requests, for which we will have a hdr. We can't simply use

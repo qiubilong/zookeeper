@@ -72,7 +72,7 @@ public class ProposalRequestProcessor implements RequestProcessor {
             zks.getLeader().processSync((LearnerSyncRequest)request);
         } else {
             nextProcessor.processRequest(request); /* CommitProcessor */
-            if (request.getHdr() != null) {
+            if (request.getHdr() != null) {//存在事务写提议时，需要同步大多数节点 ，例如create、setData、delete
                 // We need to sync and get consensus on any transactions
                 try {
                     zks.getLeader().propose(request); /* 事务提议，放入所有Follower节点的消息队列，异步发送 */

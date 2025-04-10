@@ -468,7 +468,7 @@ public class DataTree {
             Long longval = aclCache.convertAcls(acl);
             DataNode child = new DataNode(data, longval, stat);
             parent.addChild(childName);
-            nodes.put(path, child);
+            nodes.put(path, child); /* 写入内存节点 */
             EphemeralType ephemeralType = EphemeralType.get(ephemeralOwner);
             if (ephemeralType == EphemeralType.CONTAINER) {
                 containers.add(path);
@@ -508,7 +508,7 @@ public class DataTree {
             updateCount(lastPrefix, 1);
             updateBytes(lastPrefix, data == null ? 0 : data.length);
         }
-        dataWatches.triggerWatch(path, Event.EventType.NodeCreated);
+        dataWatches.triggerWatch(path, Event.EventType.NodeCreated); /* 触发watcher */
         childWatches.triggerWatch(parentName.equals("") ? "/" : parentName,
                 Event.EventType.NodeChildrenChanged);
     }
@@ -804,7 +804,7 @@ public class DataTree {
                 case OpCode.create:
                     CreateTxn createTxn = (CreateTxn) txn;
                     rc.path = createTxn.getPath();
-                    createNode(
+                    createNode( /* 提交事务写入内存数据库 & 触发watcher */
                             createTxn.getPath(),
                             createTxn.getData(),
                             createTxn.getAcl(),

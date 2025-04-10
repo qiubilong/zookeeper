@@ -1772,7 +1772,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     private void startServerCnxnFactory() {
         if (cnxnFactory != null) {
-            cnxnFactory.start(); /* 监听客户端请求 - 2181*/
+            cnxnFactory.start(); /* 启动监听客户端请求 - NettyServerCnxnFactory - 2181*/
         }
         if (secureCnxnFactory != null) {
             secureCnxnFactory.start();

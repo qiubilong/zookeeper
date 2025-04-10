@@ -434,7 +434,7 @@ public class ClientCnxn {
     }
 
     class EventThread extends ZooKeeperThread {
-        private final LinkedBlockingQueue<Object> waitingEvents =
+        private final LinkedBlockingQueue<Object> waitingEvents = /* watcher监听事件 */
             new LinkedBlockingQueue<Object>();
 
         /** This is really the queued session state until the event
@@ -507,7 +507,7 @@ public class ClientCnxn {
                  if (event == eventOfDeath) {
                     wasKilled = true;
                  } else {
-                    processEvent(event);
+                    processEvent(event); /* 处理watcher监听事件 */
                  }
                  if (wasKilled)
                     synchronized (waitingEvents) {
@@ -532,7 +532,7 @@ public class ClientCnxn {
                   WatcherSetEventPair pair = (WatcherSetEventPair) event;
                   for (Watcher watcher : pair.watchers) {
                       try {
-                          watcher.process(pair.event);
+                          watcher.process(pair.event);/* 处理watcher监听事件 */
                       } catch (Throwable t) {
                           LOG.error("Error while calling watcher ", t);
                       }
@@ -869,7 +869,7 @@ public class ClientCnxn {
                             + Long.toHexString(sessionId));
                 }
 
-                eventThread.queueEvent( we );
+                eventThread.queueEvent( we ); /* watcher监听事件 */
                 return;
             }
 

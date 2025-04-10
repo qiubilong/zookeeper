@@ -736,7 +736,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
         request.setTxn(null);
 
         try {
-            switch (request.type) {
+            switch (request.type) { /* 如果是写事务，就构建事务头部信息 TxnHeader，递增全局递增事务ID zxid */
             case OpCode.createContainer:
             case OpCode.create:
             case OpCode.create2:

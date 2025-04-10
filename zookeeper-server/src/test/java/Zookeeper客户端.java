@@ -26,6 +26,7 @@ public class Zookeeper客户端 {
         LOG.info("开始写入数据");
         zooKeeper.create("/zookeeperClient","data".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 
+        zooKeeper.getData("/test",false,null);
 
         Thread.currentThread().join();
     }
