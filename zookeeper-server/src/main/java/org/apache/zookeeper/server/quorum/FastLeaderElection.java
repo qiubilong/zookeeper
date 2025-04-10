@@ -411,7 +411,7 @@ public class FastLeaderElection implements Election {
                                             qv.toString().getBytes());
                                     sendqueue.offer(notmsg);
                                 }
-                            } else {              /* 2、自己非选举状态（Leader、Follower），则回复当前Leader选票消息  */
+                            } else {              /* 2、自己处于非选举状态（Leader、Follower），则回复当前Leader选票消息  */
                                 /**
                                  * If this server is not looking, but the one that sent the ack
                                  * is looking, then send back what it believes to be the leader.
@@ -509,13 +509,13 @@ public class FastLeaderElection implements Election {
          */
         Messenger(QuorumCnxManager manager) {
 
-            this.ws = new WorkerSender(manager);
+            this.ws = new WorkerSender(manager); /* 选举层 - 选票发送线程 */
 
             this.wsThread = new Thread(this.ws,
                     "WorkerSender[myid=" + self.getId() + "]");
             this.wsThread.setDaemon(true);
 
-            this.wr = new WorkerReceiver(manager);
+            this.wr = new WorkerReceiver(manager);/* 选举层 - 选票接收线程 */
 
             this.wrThread = new Thread(this.wr,
                     "WorkerReceiver[myid=" + self.getId() + "]");
@@ -634,9 +634,9 @@ public class FastLeaderElection implements Election {
         proposedLeader = -1;
         proposedZxid = -1;
 
-        sendqueue = new LinkedBlockingQueue<ToSend>();      /*  选票消息发送队列  */
-        recvqueue = new LinkedBlockingQueue<Notification>();/*  选票消息接收队列  */
-        this.messenger = new Messenger(manager); /* 选票消息发送线程、选票消息接收线程 */
+        sendqueue = new LinkedBlockingQueue<ToSend>();      /*  选票消息 - 发送队列  */
+        recvqueue = new LinkedBlockingQueue<Notification>();/*  选票消息 - 接收队列  */
+        this.messenger = new Messenger(manager); /* 选票发送线程、选票接收线程 */
     }
 
     /**

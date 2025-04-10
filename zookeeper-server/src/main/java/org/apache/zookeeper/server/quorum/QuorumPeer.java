@@ -1077,7 +1077,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             le = new AuthFastLeaderElection(this, true);
             break;
         case 3:
-            QuorumCnxManager qcm = createCnxnManager(); /* 选票传输层 -- 监听选举端口，为每个连接成功的节点开启一组选票发送线程和选票接收线程 */
+            QuorumCnxManager qcm = createCnxnManager(); /* 选票传输层 -- 监听选举端口，一对节点保留一条TCP连接，一条TCP连接开启 一个选票发送线程 、一个选票接收线程  */
             QuorumCnxManager oldQcm = qcmRef.getAndSet(qcm);
             if (oldQcm != null) {
                 LOG.warn("Clobbering already-set QuorumCnxManager (restarting leader election?)");
@@ -1085,7 +1085,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             }
             QuorumCnxManager.Listener listener = qcm.listener;
             if(listener != null){
-                listener.start(); /* 监听选举端口，为每个连接成功的节点开启一组选票发送线程和选票接收线程 */
+                listener.start(); /* 监听选举端口，一条TCP连接开启 一个选票发送线程 、一个选票接收线程 */
                 FastLeaderElection fle = new FastLeaderElection(this, qcm); /* 选举应用层 -- 创建选举算法 -- 创建选票发送线程和队列、 选票接收线程和队列  */
                 fle.start();
                 le = fle;

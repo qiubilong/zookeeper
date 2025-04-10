@@ -519,7 +519,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                     new BufferedInputStream(sock.getInputStream()));
 
             LOG.debug("Sync handling of connection request received from: {}", sock.getRemoteSocketAddress());
-            handleConnection(sock, din); /* 处理选举连接，一组节点保留一条tcp连接，一个节点开启一个选票发送线程和选票接受线程 */
+            handleConnection(sock, din); /* 处理选举连接，一对节点保留一条tcp连接，一条tcp连接开启 一个选票发送线程、一个选票接收线程 */
         } catch (IOException e) {
             LOG.error("Exception handling connection, addr: {}, closing server connection",
                     sock.getRemoteSocketAddress());
@@ -627,8 +627,8 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             LOG.warn("We got a connection request from a server with our own ID. "
                     + "This should be either a configuration error, or a bug.");
         } else { // Otherwise start worker threads to receive data.
-            SendWorker sw = new SendWorker(sock, sid);  /* 对方serverId大，则创建投票消息收发线程 */
-            RecvWorker rw = new RecvWorker(sock, din, sid, sw);
+            SendWorker sw = new SendWorker(sock, sid);  /* 对方serverId大，则创建选票消息 发送工作线程 */
+            RecvWorker rw = new RecvWorker(sock, din, sid, sw);/* 对方serverId大，则创建选票消息 接收工作线程 */
             sw.setRecv(rw);
 
             SendWorker vsw = senderWorkerMap.get(sid);
@@ -912,7 +912,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                         LOG.info("Creating TLS-only quorum server socket");
                         ss = new UnifiedServerSocket(self.getX509Util(), false);
                     } else {
-                        ss = new ServerSocket(); /* 监听选举端口 BIO Socket */
+                        ss = new ServerSocket(); /* 监听选举端口 3888 BIO Socket */
                     }
 
                     ss.setReuseAddress(true);
@@ -942,7 +942,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                             if (quorumSaslAuthEnabled) {
                                 receiveConnectionAsync(client);
                             } else {
-                                receiveConnection(client); /* 处理连接，一组节点保留一条TCP连接，只保留 myid大-->myid小 的tcp连接关系，减少tcp连接 -- 为每个节点开启一组选票发送线程和接收线程 */
+                                receiveConnection(client); /* 处理连接，一对节点保留一条TCP连接，只保留 myid大-->myid小 的tcp连接关系，减少tcp连接 -- 每条TCP连接 开启一个选票发送线程、一个接收线程 */
                             }
                             numRetries = 0;
                         } catch (SocketTimeoutException e) {
@@ -1170,7 +1170,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
      * Thread to receive messages. Instance waits on a socket read. If the
      * channel breaks, then removes itself from the pool of receivers.
      */
-    class RecvWorker extends ZooKeeperThread { /* 每个节点一个选票接受线程 */
+    class RecvWorker extends ZooKeeperThread { /* 每个节点一个选票接收线程 */
         Long sid; /* 对方serverId */
         Socket sock;
         volatile boolean running = true;
@@ -1235,7 +1235,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                     byte[] msgArray = new byte[length];
                     din.readFully(msgArray, 0, length); /* 接收选票消息 */
                     ByteBuffer message = ByteBuffer.wrap(msgArray);
-                    addToRecvQueue(new Message(message.duplicate(), sid)); /* 聚合所有节点的选票消息 --> 选举线程读取 */
+                    addToRecvQueue(new Message(message.duplicate(), sid)); /* 聚合所有节点的选票消息 --> （选举应用层）选举线程读取 */
                 }
             } catch (Exception e) {
                 LOG.warn("Connection broken for id " + sid + ", my id = "
