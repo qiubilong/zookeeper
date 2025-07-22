@@ -49,12 +49,12 @@ import org.slf4j.LoggerFactory;
 public class FileTxnSnapLog { /* zookeeper日志文件 */
     //the direcotry containing the
     //the transaction logs
-    private final File dataDir; /* 数据目录，对应C:\myGit\zookeeper\data\zk1 */
+    private final File dataDir; /* 数据目录，对应C:\myGit\zookeeper\data\zk1  - dataLogDir  */
     //the directory containing the
     //the snapshot directory
     private final File snapDir; /* 等于dataDir */
-    private TxnLog txnLog; /* 事务提议日志 */
-    private SnapShot snapLog; /* dataTree数据库快照 */
+    private TxnLog txnLog;    /* 事务提议日志 - dataDir=dataLogDir */
+    private SnapShot snapLog; /* dataTree数据库快照 - snapLog=dataDir */
     private final boolean trustEmptySnapshot;
     public final static int VERSION = 2;
     public final static String version = "version-";
@@ -102,8 +102,8 @@ public class FileTxnSnapLog { /* zookeeper日志文件 */
     public FileTxnSnapLog(File dataDir, File snapDir) throws IOException {
         LOG.debug("Opening datadir:{} snapDir:{}", dataDir, snapDir);
 
-        this.dataDir = new File(dataDir, version + VERSION);
-        this.snapDir = new File(snapDir, version + VERSION);
+        this.dataDir = new File(dataDir, version + VERSION); /* 事务日志文件 */
+        this.snapDir = new File(snapDir, version + VERSION); /* 数据库datatree数据 */
 
         // by default create snap/log dirs, but otherwise complain instead
         // See ZOOKEEPER-1161 for more details

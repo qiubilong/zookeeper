@@ -106,7 +106,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
      */
     private static  boolean failCreate = false;
 
-    LinkedBlockingQueue<Request> submittedRequests = new LinkedBlockingQueue<Request>(); /* 客户端请求消息队列 */
+    LinkedBlockingQueue<Request> submittedRequests = new LinkedBlockingQueue<Request>(); /* 客户端 - 请求消息 */
 
     private final RequestProcessor nextProcessor;
 
@@ -131,7 +131,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
     public void run() {
         try {
             while (true) {
-                Request request = submittedRequests.take(); /* 阻塞等待消费消息 */
+                Request request = submittedRequests.take(); /* 阻塞等待 - 消费 - 请求消息 */
                 long traceMask = ZooTrace.CLIENT_REQUEST_TRACE_MASK;
                 if (request.type == OpCode.ping) {
                     traceMask = ZooTrace.CLIENT_PING_TRACE_MASK;
@@ -142,7 +142,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
                 if (Request.requestOfDeath == request) {
                     break;
                 }
-                pRequest(request);/* 处理消息 -- 传递到下一个 ProposalRequestProcessor */
+                pRequest(request);/* 预处理消息 - 构建事务提议 --> 传递到下一个 ProposalRequestProcessor */
             }
         } catch (RequestProcessorException e) {
             if (e.getCause() instanceof XidRolloverException) {
@@ -211,7 +211,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
                 pendingChangeRecords.put(path, cr);
             }
 
-            /*
+            /**
              * ZOOKEEPER-1624 - We need to store for parent's ChangeRecord
              * of the parent node of a request. So that if this is a
              * sequential node creation request, rollbackPendingChanges()
@@ -357,7 +357,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
     protected void pRequest2Txn(int type, long zxid, Request request,
                                 Record record, boolean deserialize)
         throws KeeperException, IOException, RequestProcessorException
-    {
+    {                 /* 构建写操作 - 事务请求头 */
         request.setHdr(new TxnHeader(request.sessionId, request.cxid, zxid,
                 Time.currentWallTime(), type));
 
@@ -366,7 +366,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
             case OpCode.create2:
             case OpCode.createTTL:
             case OpCode.createContainer: {
-                pRequest2TxnCreate(type, request, record, deserialize);
+                pRequest2TxnCreate(type, request, record, deserialize); /* 设置 - 顺序节点 -编号 */
                 break;
             }
             case OpCode.deleteContainer: {
@@ -651,16 +651,16 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
             data = createRequest.getData();
             ttl = -1;
         }
-        CreateMode createMode = CreateMode.fromFlag(flags);
+        CreateMode createMode = CreateMode.fromFlag(flags);/* 节点模式 - 临时、持久、有序  */
         validateCreateRequest(path, createMode, request, ttl);
-        String parentPath = validatePathForCreate(path, request.sessionId);
+        String parentPath = validatePathForCreate(path, request.sessionId); /* 父节点路径 */
 
         List<ACL> listACL = fixupACL(path, request.authInfo, acl);
         ChangeRecord parentRecord = getRecordForPath(parentPath);
 
         checkACL(zks, parentRecord.acl, ZooDefs.Perms.CREATE, request.authInfo);
         int parentCVersion = parentRecord.stat.getCversion();
-        if (createMode.isSequential()) {
+        if (createMode.isSequential()) { /* 顺序节点 --> 使用父节点的版本号作为 节点编号 */
             path = path + String.format(Locale.ENGLISH, "%010d", parentCVersion);
         }
         validatePath(path, request.sessionId);
@@ -675,7 +675,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
         if (ephemeralParent) {
             throw new KeeperException.NoChildrenForEphemeralsException(path);
         }
-        int newCversion = parentRecord.stat.getCversion()+1;
+        int newCversion = parentRecord.stat.getCversion()+1; /* 父节点版本号 +1 */
         if (type == OpCode.createContainer) {
             request.setTxn(new CreateContainerTxn(path, data, listACL, newCversion));
         } else if (type == OpCode.createTTL) {
@@ -736,7 +736,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
         request.setTxn(null);
 
         try {
-            switch (request.type) { /* 如果是写事务，就构建事务头部信息 TxnHeader，递增全局递增事务ID zxid */
+            switch (request.type) { /* 如果是写事务，就构建事务头部信息 TxnHeader，全局事务ID zxid+1 , 设置顺序节点编号 */
             case OpCode.createContainer:
             case OpCode.create:
             case OpCode.create2:

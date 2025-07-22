@@ -35,10 +35,10 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  */
 public class QuorumMaj implements QuorumVerifier {
     private Map<Long, QuorumServer> allMembers = new HashMap<Long, QuorumServer>();
-    private HashMap<Long, QuorumServer> votingMembers = new HashMap<Long, QuorumServer>();
+    private HashMap<Long, QuorumServer> votingMembers = new HashMap<Long, QuorumServer>(); /* 可参与选举服务列表 */
     private HashMap<Long, QuorumServer> observingMembers = new HashMap<Long, QuorumServer>();
     private long version = 0;
-    private int half; /* votingMembers.size() / 2 */
+    private int half; /* 节点半数 - votingMembers.size() / 2 */
 
     public int hashCode() {
         assert false : "hashCode not designed";
@@ -82,13 +82,13 @@ public class QuorumMaj implements QuorumVerifier {
         for (Entry<Object, Object> entry : props.entrySet()) {
             String key = entry.getKey().toString();
             String value = entry.getValue().toString();
-
+            /* server.1=127.0.0.1:2881:3881 */
             if (key.startsWith("server.")) {
                 int dot = key.indexOf('.');
                 long sid = Long.parseLong(key.substring(dot + 1));
-                QuorumServer qs = new QuorumServer(sid, value);/* 节点ip端口 */
+                QuorumServer qs = new QuorumServer(sid, value);/* 解析节点ip端口  - 127.0.0.1:2881:3881 */
                 allMembers.put(Long.valueOf(sid), qs);
-                if (qs.type == LearnerType.PARTICIPANT)
+                if (qs.type == LearnerType.PARTICIPANT) /* 默认 */
                     votingMembers.put(Long.valueOf(sid), qs);
                 else {
                     observingMembers.put(Long.valueOf(sid), qs);
@@ -97,7 +97,7 @@ public class QuorumMaj implements QuorumVerifier {
                 version = Long.parseLong(value, 16);
             }
         }
-        half = votingMembers.size() / 2;
+        half = votingMembers.size() / 2; /* 节点数一半 */
     }
 
     /**

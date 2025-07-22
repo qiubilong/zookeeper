@@ -143,13 +143,13 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     }
 
     public static class QuorumServer {
-        public InetSocketAddress addr = null;
+        public InetSocketAddress addr = null; /* Follower 与 Leader 同步数据端口 -  127.0.0.1:2881 */
 
-        public InetSocketAddress electionAddr = null;
+        public InetSocketAddress electionAddr = null; /*集群选举端口 -  127.0.0.1:3881 */
         
         public InetSocketAddress clientAddr = null;
         
-        public long id;
+        public long id; /* 服务ID - myid */
 
         public String hostname;
         
@@ -218,10 +218,10 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
         private static final String wrongFormat = " does not have the form server_config or server_config;client_config"+
         " where server_config is host:port:port or host:port:port:type and client_config is port or host:port";
-
+        /* addressStr = 127.0.0.1:2881:3881 */
         public QuorumServer(long sid, String addressStr) throws ConfigException {
             // LOG.warn("sid = " + sid + " addressStr = " + addressStr);
-            this.id = sid;
+            this.id = sid; /* 服务ID - myid */
             String serverClientParts[] = addressStr.split(";");
             String serverParts[] = ConfigUtils.getHostAndPort(serverClientParts[0]);
             if ((serverClientParts.length > 2) || (serverParts.length < 3)
@@ -248,13 +248,13 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             }
 
             // server_config should be either host:port:port or host:port:port:type
-            try {
+            try {  /* Follower 与 Leader 同步数据端口 -  127.0.0.1:2881 */
                 addr = new InetSocketAddress(serverParts[0],
                         Integer.parseInt(serverParts[1]));
             } catch (NumberFormatException e) {
                 throw new ConfigException("Address unresolved: " + serverParts[0] + ":" + serverParts[1]);
             }
-            try {
+            try { /*集群选举端口 -  127.0.0.1:3881 */
                 electionAddr = new InetSocketAddress(serverParts[0],
                         Integer.parseInt(serverParts[2]));
             } catch (NumberFormatException e) {

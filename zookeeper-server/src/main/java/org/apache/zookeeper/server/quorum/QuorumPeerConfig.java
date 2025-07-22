@@ -66,7 +66,7 @@ public class QuorumPeerConfig {
     private static boolean standaloneEnabled = true;
     private static boolean reconfigEnabled = false;
 
-    protected InetSocketAddress clientPortAddress; /* 客户端请求处理端口 */
+    protected InetSocketAddress clientPortAddress; /* 对客户端服务端口 - 2181 */
     protected InetSocketAddress secureClientPortAddress;
     protected boolean sslQuorum = false;
     protected boolean shouldUsePortUnification = false;
@@ -243,7 +243,7 @@ public class QuorumPeerConfig {
         for (Entry<Object, Object> entry : zkProp.entrySet()) {
             String key = entry.getKey().toString().trim();
             String value = entry.getValue().toString().trim();
-            if (key.equals("dataDir")) {
+            if (key.equals("dataDir")) { /* 事务日志与数据库目录 */
                 dataDir = vff.create(value);
             } else if (key.equals("dataLogDir")) {
                 dataLogDir = vff.create(value);
@@ -383,7 +383,7 @@ public class QuorumPeerConfig {
                     InetAddress.getByName(clientPortAddress), clientPort);
             LOG.info("clientPortAddress is {}", formatInetAddr(this.clientPortAddress));
         } else {
-            this.clientPortAddress = new InetSocketAddress(clientPort);
+            this.clientPortAddress = new InetSocketAddress(clientPort); /* 对客户端服务端口 - 2181 */
             LOG.info("clientPortAddress is {}", formatInetAddr(this.clientPortAddress));
         }
 
@@ -419,7 +419,7 @@ public class QuorumPeerConfig {
         // backward compatibility - dynamic configuration in the same file as
         // static configuration params see writeDynamicConfig()
         if (dynamicConfigFileStr == null) {
-            setupQuorumPeerConfig(zkProp, true); /* 解析集群节点列表和myid - server.1=127.0.0.1:2881:3881 */
+            setupQuorumPeerConfig(zkProp, true); /* 解析集群 节点列表 & myid - server.1=127.0.0.1:2881:3881 */
             if (isDistributed() && isReconfigEnabled()) {
                 // we don't backup static config for standalone mode.
                 // we also don't backup if reconfig feature is disabled.
@@ -590,17 +590,17 @@ public class QuorumPeerConfig {
        if(isHierarchical){
             return new QuorumHierarchical(dynamicConfigProp);
         } else {
-           /*
+           /**
              * The default QuorumVerifier is QuorumMaj
              */        
             //LOG.info("Defaulting to majority quorums");
-            return new QuorumMaj(dynamicConfigProp);            
+            return new QuorumMaj(dynamicConfigProp); /* 解析集群服务列表 */
         }          
     }
 
     void setupQuorumPeerConfig(Properties prop, boolean configBackwardCompatibilityMode)
             throws IOException, ConfigException {
-        quorumVerifier = parseDynamicConfig(prop, electionAlg, true, configBackwardCompatibilityMode);
+        quorumVerifier = parseDynamicConfig(prop, electionAlg, true, configBackwardCompatibilityMode);/* 解析服务列表 */
         setupMyId();/* 解析服务id -myid */
         setupClientPort();
         setupPeerType();
@@ -626,7 +626,7 @@ public class QuorumPeerConfig {
                throw new ConfigException("Unrecognised parameter: " + key);                
             }
         }
-        /* 解析集群节点ip端口 server.1=127.0.0.1:2881:3881 */
+        /* 解析 集群节点列表 server.1=127.0.0.1:2881:3881 */
         QuorumVerifier qv = createQuorumVerifier(dynamicConfigProp, isHierarchical);
                
         int numParticipators = qv.getVotingMembers().size();
@@ -649,7 +649,7 @@ public class QuorumPeerConfig {
                 throw new IllegalArgumentException("Observers w/o quorum is an invalid configuration");
             }
         } else {
-            if (warnings) {
+            if (warnings) { /* 建议3台服务以上 &  奇数数量 */
                 if (numParticipators <= 2) {
                     LOG.warn("No server failure will be tolerated. " +
                         "You need at least 3 servers.");
@@ -657,7 +657,7 @@ public class QuorumPeerConfig {
                     LOG.warn("Non-optimial configuration, consider an odd number of servers.");
                 }
             }
-            /*
+            /**
              * If using FLE, then every server requires a separate election
              * port.
              */            
@@ -673,7 +673,7 @@ public class QuorumPeerConfig {
     }
 
     private void setupMyId() throws IOException {
-        File myIdFile = new File(dataDir, "myid");
+        File myIdFile = new File(dataDir, "myid"); /* 解析服务ID */
         // standalone server doesn't need myid file.
         if (!myIdFile.isFile()) {
             return;

@@ -99,10 +99,10 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
     protected int maxSessionTimeout = -1;
     protected SessionTracker sessionTracker;
     private FileTxnSnapLog txnLogFactory = null;
-    private ZKDatabase zkDb;
-    private final AtomicLong hzxid = new AtomicLong(0); /* 全局递增事务ID */
+    private ZKDatabase zkDb; /* 内存数据库dataTree */
+    private final AtomicLong hzxid = new AtomicLong(0); /* 全局递增 - 事务ID */
     public final static Exception ok = new Exception("No prob");
-    protected RequestProcessor firstProcessor;
+    protected RequestProcessor firstProcessor; /* 请求处理链 - 首个 */
     protected volatile State state = State.INITIAL;
 
     protected enum State {
@@ -287,7 +287,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
             setZxid(zkDb.getDataTreeLastProcessedZxid());
         }
         else {
-            setZxid(zkDb.loadDataBase());
+            setZxid(zkDb.loadDataBase()); /* 加载数据 */
         }
         
         // Clean up dead sessions
@@ -370,7 +370,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
     private void close(long sessionId) {
         Request si = new Request(null, sessionId, 0, OpCode.closeSession, null, null);
         setLocalSessionFlag(si);
-        submitRequest(si);
+        submitRequest(si);/* 删除临时节点 */
     }
 
     public void closeSession(long sessionId) {
@@ -397,7 +397,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         long sessionId = session.getSessionId();
         LOG.info("Expiring session 0x" + Long.toHexString(sessionId)
                 + ", timeout of " + session.getTimeout() + "ms exceeded");
-        close(sessionId);
+        close(sessionId);/* 关闭超时连接，删除临时节点 */
     }
 
     public static class MissingSessionException extends IOException {
@@ -414,7 +414,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         }
         long id = cnxn.getSessionId();
         int to = cnxn.getSessionTimeout();
-        if (!sessionTracker.touchSession(id, to)) {
+        if (!sessionTracker.touchSession(id, to)) { /* 更新连接 - 活跃时间 */
             throw new MissingSessionException(
                     "No session with sessionid 0x" + Long.toHexString(id)
                     + " exists, probably expired and removed");
@@ -453,7 +453,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
 
     public synchronized void startup() {/* 初始化请求处理责任链Processors */
         if (sessionTracker == null) {
-            createSessionTracker();
+            createSessionTracker(); /* 连接活跃统计管理器 - 超时删除临时节点 */
         }
         startSessionTracker();
         setupRequestProcessors(); /* 初始化请求处理责任链Processors */
@@ -465,11 +465,11 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
     }
 
     protected void setupRequestProcessors() {
-        RequestProcessor finalProcessor = new FinalRequestProcessor(this);
-        RequestProcessor syncProcessor = new SyncRequestProcessor(this,
+        RequestProcessor finalProcessor = new FinalRequestProcessor(this); /* 3、操作内存数据库，回复客户端 */
+        RequestProcessor syncProcessor = new SyncRequestProcessor(this,    /* 2、 记录 - 事务提议 */
                 finalProcessor);
         ((SyncRequestProcessor)syncProcessor).start();
-        firstProcessor = new PrepRequestProcessor(this, syncProcessor);
+        firstProcessor = new PrepRequestProcessor(this, syncProcessor);    /* 1、构建 -事务提议 */
         ((PrepRequestProcessor)firstProcessor).start();
     }
 
@@ -811,10 +811,10 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
             }
         }
         try {
-            touch(si.cnxn);
+            touch(si.cnxn); /* 刷新连接活跃时间，过期清理临时节点 */
             boolean validpacket = Request.isValid(si.type);
             if (validpacket) {
-                firstProcessor.processRequest(si); /* 处理客户端请求 - PrepRequestProcessor */
+                firstProcessor.processRequest(si); /* 处理客户端请求 - LeaderRequestProcessor */
                 if (si.cnxn != null) {
                     incInProcess();
                 }
@@ -1145,7 +1145,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
                 // Always treat packet from the client as a possible
                 // local request.
                 setLocalSessionFlag(si);
-                submitRequest(si); /* 处理客户端请求 */
+                submitRequest(si); /* 处理 - 客户端请求 */
             }
         }
         cnxn.incrOutstandingRequests(h);

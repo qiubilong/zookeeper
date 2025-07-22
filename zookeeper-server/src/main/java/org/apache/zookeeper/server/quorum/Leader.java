@@ -369,7 +369,7 @@ public class Leader {
      */
     final static int INFORMANDACTIVATE = 19;
     
-    final ConcurrentMap<Long, Proposal> outstandingProposals = new ConcurrentHashMap<Long, Proposal>();/* 提议阶段的事务请求 */
+    final ConcurrentMap<Long, Proposal> outstandingProposals = new ConcurrentHashMap<Long, Proposal>();/* 等待ack的事务提议 */
 
     private final ConcurrentLinkedQueue<Proposal> toBeApplied = new ConcurrentLinkedQueue<Proposal>();
 
@@ -479,9 +479,9 @@ public class Leader {
             cnxAcceptor = new LearnerCnxAcceptor();/* 监听等待Follower节点连接，Follower连接后同步Leader数据，保持集群数据一致性  */
             cnxAcceptor.start();
 
-            long epoch = getEpochToPropose(self.getId(), self.getAcceptedEpoch());
+            long epoch = getEpochToPropose(self.getId(), self.getAcceptedEpoch()); /* epoch + 1 */
 
-            zk.setZxid(ZxidUtils.makeZxid(epoch, 0));
+            zk.setZxid(ZxidUtils.makeZxid(epoch, 0)); /* 全局递增事务ID */
 
             synchronized(this){
                 lastProposed = zk.getZxid();
@@ -821,10 +821,10 @@ public class Leader {
             informAndActivate(p, designatedLeader);
             //turnOffFollowers();
         } else {
-            commit(zxid);/*事务提议收到超过半数节点ack后，发起广播提交事务 */
-            inform(p);
+            commit(zxid);/* 广播 commit 事提议 */
+            inform(p);   /* 通知观察者 */
         }
-        zk.commitProcessor.commit(p.request);/* Leader提交事务 */
+        zk.commitProcessor.commit(p.request);/* Leader提交事务 --> 操作内存数据库 & 回复客户端 */
         if(pendingSyncs.containsKey(zxid)){
             for(LearnerSyncRequest r: pendingSyncs.remove(zxid)) {
                 sendSync(r);
@@ -841,7 +841,7 @@ public class Leader {
      * @param zxid, the zxid of the proposal sent out
      * @param sid, the id of the server that sent the ack
      * @param followerAddr
-     */
+     */   /*   AckRequestProcessor / LearnerHandler    --> ACK 事务 */
     synchronized public void processAck(long sid, long zxid, SocketAddress followerAddr) {        
         if (!allowedToCommit) return; // last op committed was a leader change - from now on 
                                      // the new leader should commit        
@@ -886,13 +886,13 @@ public class Leader {
             return;
         }
         
-        p.addAck(sid); /* sid节点ack事务提议 */
+        p.addAck(sid); /* sid节点 - ack事务提议 */
         /**if (LOG.isDebugEnabled()) {
             LOG.debug("Count for zxid: 0x{} is {}",
                     Long.toHexString(zxid), p.ackSet.size());
         }*/
         
-        boolean hasCommitted = tryToCommit(p, zxid, followerAddr);/* 超过多半数节点ACK事务提议，则发起commit提交事务 */
+        boolean hasCommitted = tryToCommit(p, zxid, followerAddr);/* 超过多半数节点ACK事务提议，则发起commit，提交事务 */
 
         // If p is a reconfiguration, multiple other operations may be ready to be committed,
         // since operations wait for different sets of acks.
@@ -1115,7 +1115,7 @@ public class Leader {
             }
 
             lastProposed = p.packet.getZxid();
-            outstandingProposals.put(lastProposed, p);//提议阶段的事务请求
+            outstandingProposals.put(lastProposed, p);/* 等待ack的事务提议 */
             sendPacket(pp); /* 广播事务提议 */
         }
         return p;

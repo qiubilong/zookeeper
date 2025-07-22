@@ -77,7 +77,7 @@ public class NIOServerCnxn extends ServerCnxn {
 
     private int sessionTimeout;
 
-    private final ZooKeeperServer zkServer;
+    private final ZooKeeperServer zkServer; /* zookeeper实例 */
 
     /**
      * The number of requests that have been submitted but not yet responded to.
@@ -178,7 +178,7 @@ public class NIOServerCnxn extends ServerCnxn {
             if (!initialized) {
                 readConnectRequest();
             } else {
-                readRequest();
+                readRequest(); /* 处理 - 读请求 */
             }
             lenBuffer.clear();
             incomingBuffer = lenBuffer;
@@ -317,8 +317,8 @@ public class NIOServerCnxn extends ServerCnxn {
 
                 return;
             }
-            if (k.isReadable()) {
-                int rc = sock.read(incomingBuffer);
+            if (k.isReadable()) { /* 处理 - 可读事件 */
+                int rc = sock.read(incomingBuffer);/* 读取数据 */
                 if (rc < 0) {
                     throw new EndOfStreamException(
                             "Unable to read additional data from client sessionid 0x"
@@ -336,7 +336,7 @@ public class NIOServerCnxn extends ServerCnxn {
                         isPayload = true;
                     }
                     if (isPayload) { // not the case for 4letterword
-                        readPayload();
+                        readPayload(); /* 处理 - 读请求 */
                     }
                     else {
                         // four letter words take care
@@ -345,7 +345,7 @@ public class NIOServerCnxn extends ServerCnxn {
                     }
                 }
             }
-            if (k.isWritable()) {
+            if (k.isWritable()) {/* 处理 - 可写事件 */
                 handleWrite(k);
 
                 if (!initialized && !getReadInterest() && !getWriteInterest()) {
@@ -377,7 +377,7 @@ public class NIOServerCnxn extends ServerCnxn {
     }
 
     private void readRequest() throws IOException {
-        zkServer.processPacket(this, incomingBuffer);
+        zkServer.processPacket(this, incomingBuffer); /* 处理读请求 */
     }
 
     // Only called as callback from zkServer.processPacket()

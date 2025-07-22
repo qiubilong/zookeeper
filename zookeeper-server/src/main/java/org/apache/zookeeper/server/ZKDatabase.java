@@ -70,9 +70,9 @@ public class ZKDatabase {
      * make sure on a clear you take care of
      * all these members.
      */
-    protected DataTree dataTree;
+    protected DataTree dataTree; /* 内存数据库 */
     protected ConcurrentHashMap<Long, Integer> sessionsWithTimeouts;
-    protected FileTxnSnapLog snapLog;
+    protected FileTxnSnapLog snapLog; /* 事务 + 快照 文件管理器 */
     protected long minCommittedLog, maxCommittedLog;
 
     /**
@@ -235,7 +235,7 @@ public class ZKDatabase {
      * the transactions to the committedlog in memory.
      * @return the last valid zxid on disk
      * @throws IOException
-     */
+     */        /* 从磁盘 - 加载 - 数据库数据 */
     public long loadDataBase() throws IOException {
         long zxid = snapLog.restore(dataTree, sessionsWithTimeouts, commitProposalPlaybackListener);
         initialized = true;

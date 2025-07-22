@@ -43,8 +43,8 @@ public class ProposalRequestProcessor implements RequestProcessor {
             RequestProcessor nextProcessor) {
         this.zks = zks;
         this.nextProcessor = nextProcessor;
-        AckRequestProcessor ackProcessor = new AckRequestProcessor(zks.getLeader());/* Leader将事务提议写入本地日志后， ACK事务提议  */
-        syncProcessor = new SyncRequestProcessor(zks, ackProcessor);/* 将事务提议写入本地日志 */
+        AckRequestProcessor ackProcessor = new AckRequestProcessor(zks.getLeader());/* 2、Leader将事务提议写入本地日志后， ACK事务提议  */
+        syncProcessor = new SyncRequestProcessor(zks, ackProcessor);/* 1、将事务提议写入本地日志 */
     }
 
     /**
@@ -71,15 +71,15 @@ public class ProposalRequestProcessor implements RequestProcessor {
         if (request instanceof LearnerSyncRequest){
             zks.getLeader().processSync((LearnerSyncRequest)request);
         } else {
-            nextProcessor.processRequest(request); /* CommitProcessor */
+            nextProcessor.processRequest(request); /* 等待大多数节点 ack事务提议 - CommitProcessor */
             if (request.getHdr() != null) {//存在事务写提议时，需要同步大多数节点 ，例如create、setData、delete
                 // We need to sync and get consensus on any transactions
                 try {
-                    zks.getLeader().propose(request); /* 事务提议，放入所有Follower节点的消息队列，异步发送 */
+                    zks.getLeader().propose(request); /* 广播事务提议，放入所有Follower节点的消息队列，异步发送 */
                 } catch (XidRolloverException e) {
                     throw new RequestProcessorException(e.getMessage(), e);
                 }
-                syncProcessor.processRequest(request);/* 事务提议 ，异步写入自己文件 */
+                syncProcessor.processRequest(request);/* 事务提议写入本地文件，给自己事务ACK */
             }
         }
     }

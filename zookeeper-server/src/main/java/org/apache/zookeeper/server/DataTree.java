@@ -461,7 +461,7 @@ public class DataTree {
 
             if (parentCVersion == -1) {
                 parentCVersion = parent.stat.getCversion();
-                parentCVersion++;
+                parentCVersion++; /* 父节点版本++ ，用于顺序节点编号 */
             }
             parent.stat.setCversion(parentCVersion);
             parent.stat.setPzxid(zxid);

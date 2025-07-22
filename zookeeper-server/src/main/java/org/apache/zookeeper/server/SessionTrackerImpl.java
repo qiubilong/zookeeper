@@ -154,7 +154,7 @@ public class SessionTrackerImpl extends ZooKeeperCriticalThread implements
 
                 for (SessionImpl s : sessionExpiryQueue.poll()) {
                     setSessionClosing(s.sessionId);
-                    expirer.expire(s);
+                    expirer.expire(s);/* 关闭超时连接，删除临时节点 */
                 }
             }
         } catch (InterruptedException e) {

@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * This class starts and runs a standalone ZooKeeperServer.
  */
 @InterfaceAudience.Public
-public class ZooKeeperServerMain {
+public class ZooKeeperServerMain { /* 单机模式运行 main 方法 */
     private static final Logger LOG =
         LoggerFactory.getLogger(ZooKeeperServerMain.class);
 
@@ -61,7 +61,7 @@ public class ZooKeeperServerMain {
     public static void main(String[] args) {
         ZooKeeperServerMain main = new ZooKeeperServerMain();
         try {
-            main.initializeAndRun(args);
+            main.initializeAndRun(args); /* 单机运行 */
         } catch (IllegalArgumentException e) {
             LOG.error("Invalid arguments, exiting abnormally", e);
             LOG.info(USAGE);
@@ -103,7 +103,7 @@ public class ZooKeeperServerMain {
             config.parse(args);
         }
 
-        runFromConfig(config);
+        runFromConfig(config);/* 单机运行 */
     }
 
     /**
@@ -121,14 +121,14 @@ public class ZooKeeperServerMain {
             // so rather than spawning another thread, we will just call
             // run() in this thread.
             // create a file logger url from the command line args
-            txnLog = new FileTxnSnapLog(config.dataLogDir, config.dataDir);
-            final ZooKeeperServer zkServer = new ZooKeeperServer(txnLog,
+            txnLog = new FileTxnSnapLog(config.dataLogDir, config.dataDir); /* zookeeper日志文件目录 */
+            final ZooKeeperServer zkServer = new ZooKeeperServer(txnLog,    /* 创建 zookeeper实例 */
                     config.tickTime, config.minSessionTimeout, config.maxSessionTimeout, null);
             txnLog.setServerStats(zkServer.serverStats());
 
             // Registers shutdown handler which will be used to know the
             // server error or shutdown state changes.
-            final CountDownLatch shutdownLatch = new CountDownLatch(1);
+            final CountDownLatch shutdownLatch = new CountDownLatch(1); /* 停机 -倒计时器锁 */
             zkServer.registerServerShutdownHandler(
                     new ZooKeeperServerShutdownHandler(shutdownLatch));
 
@@ -139,9 +139,9 @@ public class ZooKeeperServerMain {
 
             boolean needStartZKServer = true;
             if (config.getClientPortAddress() != null) {
-                cnxnFactory = ServerCnxnFactory.createFactory();
+                cnxnFactory = ServerCnxnFactory.createFactory(); /* 创建 -对客户端服务ServerSocket */
                 cnxnFactory.configure(config.getClientPortAddress(), config.getMaxClientCnxns(), false);
-                cnxnFactory.startup(zkServer);
+                cnxnFactory.startup(zkServer); /* 绑定对客户端服务端口2181，启动zookeeper实例 */
                 // zkServer has been started. So we don't need to start it again in secureCnxnFactory.
                 needStartZKServer = false;
             }

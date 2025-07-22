@@ -48,7 +48,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
         RequestProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(SyncRequestProcessor.class);
     private final ZooKeeperServer zks;
-    private final LinkedBlockingQueue<Request> queuedRequests = /* 即将刷盘的事务提议队列 */
+    private final LinkedBlockingQueue<Request> queuedRequests = /* 即将刷盘的事务提议 - 队列 */
         new LinkedBlockingQueue<Request>();
     private final RequestProcessor nextProcessor;
 

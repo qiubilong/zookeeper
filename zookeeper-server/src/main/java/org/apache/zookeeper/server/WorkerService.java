@@ -202,7 +202,7 @@ public class WorkerService {
                     workers.add(Executors.newFixedThreadPool(
                         1, new DaemonThreadFactory(threadNamePrefix, i)));
                 }
-            } else {
+            } else { /* 固定线程池， numWorkerThreads= 2* cores */
                 workers.add(Executors.newFixedThreadPool(
                     numWorkerThreads, new DaemonThreadFactory(threadNamePrefix)));
             }
