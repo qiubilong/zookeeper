@@ -46,7 +46,7 @@ public class SyncedLearnerTracker {
 
     public boolean hasAllQuorums() {
         for (QuorumVerifierAcksetPair qvAckset : qvAcksetPairs) {
-            if (!qvAckset.getQuorumVerifier().containsQuorum(qvAckset.getAckset()))/* (ackSet.size() > half); */
+            if (!qvAckset.getQuorumVerifier().containsQuorum(qvAckset.getAckset()))/* containsQuorum=(ackSet.size() > half); */
                 return false;
         }
         return true;
@@ -63,8 +63,8 @@ public class SyncedLearnerTracker {
     }
 
     public static class QuorumVerifierAcksetPair {
-        private final QuorumVerifier qv;
-        private final HashSet<Long> ackset;
+        private final QuorumVerifier qv;     /* 节点列表 - QuorumMaj */
+        private final HashSet<Long> ackset;  /* 选举 myid */
 
         public QuorumVerifierAcksetPair(QuorumVerifier qv, HashSet<Long> ackset) {                
             this.qv = qv;

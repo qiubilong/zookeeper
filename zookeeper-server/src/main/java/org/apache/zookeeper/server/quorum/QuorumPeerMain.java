@@ -143,7 +143,7 @@ public class QuorumPeerMain {
           ServerCnxnFactory cnxnFactory = null;
           ServerCnxnFactory secureCnxnFactory = null;
 
-          if (config.getClientPortAddress() != null) { /* 监听处理客户端请求2181 -- netty策略时 NettyServerCnxnFactory */
+          if (config.getClientPortAddress() != null) { /* 对客户端提供服务2181 -- netty策略时 NettyServerCnxnFactory */
               cnxnFactory = ServerCnxnFactory.createFactory();
               cnxnFactory.configure(config.getClientPortAddress(),
                       config.getMaxClientCnxns(),
@@ -157,8 +157,8 @@ public class QuorumPeerMain {
                       true);
           }
 
-          quorumPeer = getQuorumPeer(); /* 服务节点对象 */
-          quorumPeer.setTxnFactory(new FileTxnSnapLog( /* 数据文件 */
+          quorumPeer = getQuorumPeer(); /* 创建 - 服务节点对象 */
+          quorumPeer.setTxnFactory(new FileTxnSnapLog( /* zookeeper 数据文件 */
                       config.getDataLogDir(),
                       config.getDataDir()));
           quorumPeer.enableLocalSessions(config.areLocalSessionsEnabled());
@@ -179,7 +179,7 @@ public class QuorumPeerMain {
               quorumPeer.setLastSeenQuorumVerifier(config.getLastSeenQuorumVerifier(), false);
           }
           quorumPeer.initConfigInZKDatabase();
-          quorumPeer.setCnxnFactory(cnxnFactory);/* 处理客户端请求 */
+          quorumPeer.setCnxnFactory(cnxnFactory);/* 对客户端提供服务2181 - 具体实现类 */
           quorumPeer.setSecureCnxnFactory(secureCnxnFactory);
           quorumPeer.setSslQuorum(config.isSslQuorum());
           quorumPeer.setUsePortUnification(config.shouldUsePortUnification());

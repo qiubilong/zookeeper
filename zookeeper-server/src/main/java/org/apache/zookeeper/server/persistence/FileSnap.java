@@ -47,7 +47,7 @@ import org.apache.zookeeper.server.util.SerializeUtils;
  * it is responsible for storing, serializing
  * and deserializing the right snapshot.
  * and provides access to the snapshots.
- */
+ */    /* 数据库快照文件 */
 public class FileSnap implements SnapShot {
     File snapDir;
     private volatile boolean close = false;

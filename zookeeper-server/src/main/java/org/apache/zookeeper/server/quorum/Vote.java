@@ -20,7 +20,7 @@ package org.apache.zookeeper.server.quorum;
 
 import org.apache.zookeeper.server.quorum.QuorumPeer.ServerState;
 
-
+/* 选票 */
 public class Vote {
     
     public Vote(long id,
@@ -37,10 +37,10 @@ public class Vote {
                     long zxid,
                     long peerEpoch) {
         this.version = 0x0;
-        this.id = id;
-        this.zxid = zxid;
+        this.id = id;       /* 服务ID - myid */
+        this.zxid = zxid;   /* 最大事务ID */
         this.electionEpoch = -1;
-        this.peerEpoch = peerEpoch;
+        this.peerEpoch = peerEpoch; /* 当前（最大）选举周期 */
         this.state = ServerState.LOOKING;
     }
 

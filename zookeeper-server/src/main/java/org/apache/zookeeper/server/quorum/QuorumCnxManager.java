@@ -139,14 +139,14 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
     /**
      * Mapping from Peer to Thread number
      */
-    final ConcurrentHashMap<Long, SendWorker> senderWorkerMap;
-    final ConcurrentHashMap<Long, ArrayBlockingQueue<ByteBuffer>> queueSendMap;
+    final ConcurrentHashMap<Long, SendWorker> senderWorkerMap;                  /* myid -- 发送线程 */
+    final ConcurrentHashMap<Long, ArrayBlockingQueue<ByteBuffer>> queueSendMap; /* myid -- 发送队列 */
     final ConcurrentHashMap<Long, ByteBuffer> lastMessageSent;
 
     /**
      * Reception queue
      */
-    public final ArrayBlockingQueue<Message> recvQueue; /* 选票网络传输层 -- 收到的选票消息 */
+    public final ArrayBlockingQueue<Message> recvQueue; /* 选票网络传输层 -- 收到的选票队列 */
     /**
      * Object to synchronize access to recvQueue
      */
@@ -285,7 +285,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             return "InitialMessage{sid=" + sid + ", electionAddr=" + electionAddr + '}';
         }
     }
-
+    /* 投票传输层 */
     public QuorumCnxManager(QuorumPeer self,
                             final long mySid,
                             Map<Long,QuorumPeer.QuorumServer> view,
@@ -295,7 +295,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                             boolean listenOnAllIPs,
                             int quorumCnxnThreadsSize,
                             boolean quorumSaslAuthEnabled) {
-        this.recvQueue = new ArrayBlockingQueue<Message>(RECV_CAPACITY); /* 接收选票消息队列 */
+        this.recvQueue = new ArrayBlockingQueue<Message>(RECV_CAPACITY); /* 公共的 - 接收选票 - 消息队列 */
         this.queueSendMap = new ConcurrentHashMap<Long, ArrayBlockingQueue<ByteBuffer>>();/* 每个节点一个发送选票消息队列 */
         this.senderWorkerMap = new ConcurrentHashMap<Long, SendWorker>(); /* 每个节点一个发送选票消息线程网络io */
         this.lastMessageSent = new ConcurrentHashMap<Long, ByteBuffer>();
@@ -370,7 +370,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             } else {
                 sock = SOCKET_FACTORY.get();
                 setSockOpts(sock);
-                sock.connect(electionAddr, cnxTO);
+                sock.connect(electionAddr, cnxTO);/* 与对方建立连接 */
             }
             LOG.debug("Connected to server " + sid);
         } catch (X509Exception e) {
@@ -384,7 +384,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
         }
 
         try {
-            startConnection(sock, sid);
+            startConnection(sock, sid); /* 建立连接后，发送本机myid，创建 独立的 - 发送、接收工作线程，发送队列 */
         } catch (IOException e) {
             LOG.error("Exception while connecting, id: {}, addr: {}, closing learner connection",
                     new Object[] { sid, sock.getRemoteSocketAddress() }, e);
@@ -404,7 +404,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                     sid);
             return true;
         }
-        try {
+        try {                             /* 异步与对方建立连接 */
             connectionExecutor.execute(new QuorumConnectionReqThread(electionAddr, sid));
             connectionThreadCnt.incrementAndGet();
         } catch (Throwable e) {
@@ -433,7 +433,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
         @Override
         public void run() {
             try{
-                initiateConnection(electionAddr, sid);
+                initiateConnection(electionAddr, sid); /* 与对方建立连接 */
             } finally {
                 inprogressConnections.remove(sid);
             }
@@ -454,7 +454,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             // Sending id and challenge
             // represents protocol version (in other words - message type)
             dout.writeLong(PROTOCOL_VERSION);
-            dout.writeLong(self.getId());
+            dout.writeLong(self.getId());/* 发送本机myid --> 目的用于两节节点，保留一条tcp连接 */
             String addr = formatInetAddr(self.getElectionAddress());
             byte[] addr_bytes = addr.getBytes();
             dout.writeInt(addr_bytes.length);
@@ -491,9 +491,9 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
 
             if(vsw != null)
                 vsw.finish();
-
+            /* myid - 发送线程 */
             senderWorkerMap.put(sid, sw);
-            queueSendMap.putIfAbsent(sid, new ArrayBlockingQueue<ByteBuffer>(
+            queueSendMap.putIfAbsent(sid, new ArrayBlockingQueue<ByteBuffer>( /* myid - 发送队列 */
                     SEND_CAPACITY));
 
             sw.start();
@@ -574,7 +574,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             } else {
                 try {
                     InitialMessage init = InitialMessage.parse(protocolVersion, din);
-                    sid = init.sid; /* 读取对方serverId */
+                    sid = init.sid; /* 对方serverId */
                     electionAddr = init.electionAddr;
                 } catch (InitialMessage.InitialMessageException ex) {
                     LOG.error("Initial message parsing error!", ex);
@@ -636,9 +636,9 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             if (vsw != null) {
                 vsw.finish();
             }
-
+            /* myid -- 发送线程  */
             senderWorkerMap.put(sid, sw);
-
+            /* myid -- 发送队列  */
             queueSendMap.putIfAbsent(sid,
                     new ArrayBlockingQueue<ByteBuffer>(SEND_CAPACITY));
 
@@ -669,11 +669,11 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                 SEND_CAPACITY);
              ArrayBlockingQueue<ByteBuffer> oldq = queueSendMap.putIfAbsent(sid, bq);
              if (oldq != null) {
-                 addToSendQueue(oldq, b);/* 2、投票消息发送给其他节点 -->放入对应的消息队列-- > */
+                 addToSendQueue(oldq, b);/* 2、投票消息  -->放入对方的消息队列 */
              } else {
                  addToSendQueue(bq, b);
              }
-             connectOne(sid);
+             connectOne(sid); /* 1、对方连接不存在，就创建 */
 
         }
     }
@@ -694,7 +694,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
         // we are doing connection initiation always asynchronously, since it is possible that
         // the socket connection timeouts or the SSL handshake takes too long and don't want
         // to keep the rest of the connections to wait
-        return initiateConnectionAsync(electionAddr, sid);
+        return initiateConnectionAsync(electionAddr, sid); /* 异步与对方建立连接 */
     }
 
     /**
@@ -704,7 +704,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
      *  @param sid  server id
      */
     synchronized void connectOne(long sid){
-        if (senderWorkerMap.get(sid) != null) {
+        if (senderWorkerMap.get(sid) != null) { /* 对方连接已经存在，直接返回 */
             LOG.debug("There is a connection already for server " + sid);
             return;
         }
@@ -719,7 +719,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             if (lastCommittedView.containsKey(sid)) {
                 knownId = true;
                 LOG.debug("Server {} knows {} already, it is in the lastCommittedView", self.getId(), sid);
-                if (connectOne(sid, lastCommittedView.get(sid).electionAddr))
+                if (connectOne(sid, lastCommittedView.get(sid).electionAddr)) /* 与对方建立连接 */
                     return;
             }
             if (lastSeenQV != null && lastProposedView.containsKey(sid)
@@ -1340,7 +1340,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                 }
             }
             try {
-                recvQueue.add(msg);
+                recvQueue.add(msg); /* 收到选票  -->  选举应用层读取  */
             } catch (IllegalStateException ie) {
                 // This should never happen
                 LOG.error("Unable to insert element in the recvQueue " + ie);
@@ -1354,7 +1354,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
      * become available.
      *
      * {@link ArrayBlockingQueue#poll(long, java.util.concurrent.TimeUnit)}
-     */
+     */        /* 选举应用层 --> 消费选票 */
     public Message pollRecvQueue(long timeout, TimeUnit unit)
        throws InterruptedException {
        return recvQueue.poll(timeout, unit);

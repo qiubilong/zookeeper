@@ -451,12 +451,12 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         }
     }
 
-    public synchronized void startup() {/* 初始化请求处理责任链Processors */
+    public synchronized void startup() {/* 初始化 - 请求处理责任链Processors */
         if (sessionTracker == null) {
             createSessionTracker(); /* 连接活跃统计管理器 - 超时删除临时节点 */
         }
         startSessionTracker();
-        setupRequestProcessors(); /* 初始化请求处理责任链Processors */
+        setupRequestProcessors(); /* 初始化请求处理责任链Processors - Leader主节点 LeaderZookeeperServer  */
 
         registerJMX();
 

@@ -367,7 +367,7 @@ public class LearnerHandler extends ZooKeeperThread { /* 从节点数据交互�
     @Override
     public void run() {
         try {
-            leader.addLearnerHandler(this); /* 加入从节点列表 */
+            leader.addLearnerHandler(this); /* 加入 - 从节点列表 */
             tickOfNextAckDeadline = leader.self.tick.get()
                     + leader.self.initLimit + leader.self.syncLimit;
 
@@ -561,7 +561,7 @@ public class LearnerHandler extends ZooKeeperThread { /* 从节点数据交互�
                         }
                     }
                     syncLimitCheck.updateAck(qp.getZxid());
-                    leader.processAck(this.sid, qp.getZxid(), sock.getLocalSocketAddress()); /* 从节点 ack事务提议 */
+                    leader.processAck(this.sid, qp.getZxid(), sock.getLocalSocketAddress()); /* Follow节点 ack事务提议 */
                     break;
                 case Leader.PING:
                     // Process the touches

@@ -246,7 +246,7 @@ public class Leader {
                 if (self.getQuorumListenOnAllIPs()) {
                     ss = new ServerSocket(self.getQuorumAddress().getPort());
                 } else {
-                    ss = new ServerSocket();/* 监听集群数据交换端口2888，等待Follower节点连接 */
+                    ss = new ServerSocket();/* BIO - 监听集群数据交换端口2888，等待Follower节点连接 */
                 }
             }
             ss.setReuseAddress(true);
@@ -391,7 +391,7 @@ public class Leader {
                     Socket s = null;
                     boolean error = false;
                     try {
-                        s = ss.accept();
+                        s = ss.accept();/* BIO - 接收 Follower 连接  */
 
                         // start with the initLimit, once the ack is processed
                         // in LearnerHandler switch to the syncLimit
@@ -476,12 +476,12 @@ public class Leader {
 
             // Start thread that waits for connection requests from
             // new followers.
-            cnxAcceptor = new LearnerCnxAcceptor();/* 监听等待Follower节点连接，Follower连接后同步Leader数据，保持集群数据一致性  */
+            cnxAcceptor = new LearnerCnxAcceptor();/* 等待Follower节点连接，Follower连接后同步Leader数据，保持集群数据一致性  */
             cnxAcceptor.start();
 
             long epoch = getEpochToPropose(self.getId(), self.getAcceptedEpoch()); /* epoch + 1 */
 
-            zk.setZxid(ZxidUtils.makeZxid(epoch, 0)); /* 全局递增事务ID */
+            zk.setZxid(ZxidUtils.makeZxid(epoch, 0)); /* 初始化 - 全局递增 - 事务ID */
 
             synchronized(this){
                 lastProposed = zk.getZxid();
@@ -565,7 +565,7 @@ public class Leader {
                  return;
              }
 
-             startZkServer();/* 初始化请求处理责任链Processors */
+             startZkServer();/* 初始化 - 请求处理责任链Processors */
              
             /**
              * WARNING: do not use this for anything other than QA testing
@@ -586,7 +586,7 @@ public class Leader {
             }
 
             if (!System.getProperty("zookeeper.leaderServes", "yes").equals("no")) {
-                self.setZooKeeperServer(zk);
+                self.setZooKeeperServer(zk); /* 设置 提供客户端服务的 zk实例 */
             }
 
             self.adminServer.setZooKeeperServer(zk);

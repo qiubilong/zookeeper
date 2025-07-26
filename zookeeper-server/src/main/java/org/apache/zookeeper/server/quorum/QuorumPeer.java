@@ -105,7 +105,7 @@ import static org.apache.zookeeper.common.NetUtils.formatInetAddr;
  * </pre>
  *
  * The request for the current leader will consist solely of an xid: int xid;
- */
+ */    /* 服务节点 */
 public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider {
     private static final Logger LOG = LoggerFactory.getLogger(QuorumPeer.class);
 
@@ -455,7 +455,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
      */
 
     //last committed quorum verifier
-    private QuorumVerifier quorumVerifier;
+    private QuorumVerifier quorumVerifier;  /* 服务器节点 - QuorumMaj */
     
     //last proposed quorum verifier
     private QuorumVerifier lastSeenQuorumVerifier = null;
@@ -707,7 +707,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         }
     }
 
-    private ServerState state = ServerState.LOOKING;
+    private ServerState state = ServerState.LOOKING;  /* 服务状态 */
     
     private boolean reconfigFlag = false; // indicates that a reconfig just committed
 
@@ -800,12 +800,12 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     
     private int electionType;
 
-    Election electionAlg;
+    Election electionAlg;   /* 选举应用层 - FastLeaderElection */
 
-    ServerCnxnFactory cnxnFactory;
+    ServerCnxnFactory cnxnFactory;   /* 对客户端提供服务 - 网络工厂 */
     ServerCnxnFactory secureCnxnFactory;
 
-    private FileTxnSnapLog logFactory = null;
+    private FileTxnSnapLog logFactory = null; /* zookeeper日志文件 */
 
     private final QuorumStats quorumStats;
 
@@ -884,8 +884,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         if (!getView().containsKey(myid)) {
             throw new RuntimeException("My id " + myid + " not in the peer list");
          }
-        loadDataBase();//从snapshot和log文件中加载数据
-        startServerCnxnFactory(); /* 启动监听客户端请求端口 - 2181 */
+        loadDataBase();/* 从snapshot和log文件中加载数据 */
+        startServerCnxnFactory(); /* 启动监听客户端请求服务 - 2181 */
         try {
             adminServer.start(); /*  管理后台 -  http://localhost:8080/commands */
         } catch (AdminServerException e) {
@@ -948,7 +948,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     synchronized public void startLeaderElection() {
        try {
            if (getPeerState() == ServerState.LOOKING) {
-               currentVote = new Vote(myid, getLastLoggedZxid(), getCurrentEpoch());/* 首先默认投票自己 */
+               currentVote = new Vote(myid, getLastLoggedZxid(), getCurrentEpoch());/* 默认投票 */
            }
        } catch(IOException e) {
            RuntimeException re = new RuntimeException(e.getMessage());
@@ -1077,7 +1077,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             le = new AuthFastLeaderElection(this, true);
             break;
         case 3:
-            QuorumCnxManager qcm = createCnxnManager(); /* 选票传输层 -- 监听选举端口，一对节点保留一条TCP连接，一条TCP连接开启 一个选票发送线程 、一个选票接收线程  */
+            QuorumCnxManager qcm = createCnxnManager(); /* 选票传输层 -- 监听选举端口，一对节点保留一条TCP连接，每条TCP连接开启 一个选票发送线程 、一个选票接收线程  */
             QuorumCnxManager oldQcm = qcmRef.getAndSet(qcm);
             if (oldQcm != null) {
                 LOG.warn("Clobbering already-set QuorumCnxManager (restarting leader election?)");
@@ -1772,7 +1772,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     private void startServerCnxnFactory() {
         if (cnxnFactory != null) {
-            cnxnFactory.start(); /* 启动监听客户端请求 - NettyServerCnxnFactory - 2181*/
+            cnxnFactory.start(); /* 启动监听客户端请求 - NettyServerCnxnFactory - 2181 */
         }
         if (secureCnxnFactory != null) {
             secureCnxnFactory.start();
@@ -1863,7 +1863,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     }
 
     private long acceptedEpoch = -1;
-    private long currentEpoch = -1;
+    private long currentEpoch = -1; /* 当前最大选举周期 */
 
     public static final String CURRENT_EPOCH_FILENAME = "currentEpoch";
 

@@ -49,10 +49,10 @@ import org.slf4j.LoggerFactory;
 public class FileTxnSnapLog { /* zookeeper日志文件 */
     //the direcotry containing the
     //the transaction logs
-    private final File dataDir; /* 数据目录，对应C:\myGit\zookeeper\data\zk1  - dataLogDir  */
+    private final File dataDir; /* 事务日志目录 - dataLogDir  */
     //the directory containing the
     //the snapshot directory
-    private final File snapDir; /* 等于dataDir */
+    private final File snapDir; /* 数据库快照目录 */
     private TxnLog txnLog;    /* 事务提议日志 - dataDir=dataLogDir */
     private SnapShot snapLog; /* dataTree数据库快照 - snapLog=dataDir */
     private final boolean trustEmptySnapshot;
@@ -159,7 +159,7 @@ public class FileTxnSnapLog { /* zookeeper日志文件 */
             checkSnapDir();
         }
 
-        txnLog = new FileTxnLog(this.dataDir); /* 事务提交文件 log */
+        txnLog = new FileTxnLog(this.dataDir); /* 事务日志文件 */
         snapLog = new FileSnap(this.snapDir); /*  内存数据库dataTree快照文件 */
     }
 

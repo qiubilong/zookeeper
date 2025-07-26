@@ -229,7 +229,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
                 selector.select();
 
                 Iterator<SelectionKey> selectedKeys =
-                    selector.selectedKeys().iterator(); /* 连接事件集合 */
+                    selector.selectedKeys().iterator(); /* 可连接事件集合 */
                 while (!stopped && selectedKeys.hasNext()) {
                     SelectionKey key = selectedKeys.next();
                     selectedKeys.remove();
@@ -681,7 +681,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
             selectorThreads.add(new SelectorThread(i)); /* 多路复用器 - 监听线程 */
         }
 
-        this.ss = ServerSocketChannel.open(); /* 服务端Socket */
+        this.ss = ServerSocketChannel.open(); /* 服务端 NIO Socket */
         ss.socket().setReuseAddress(true);
         LOG.info("binding to port " + addr);
         ss.socket().bind(addr);
@@ -756,7 +756,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     }
 
     @Override
-    public void startup(ZooKeeperServer zks, boolean startServer)
+    public void startup(ZooKeeperServer zks, boolean startServer)/* 单机模式 */
             throws IOException, InterruptedException {
         start(); /* 启动 accept, selector 线程 */
         setZooKeeperServer(zks); /* 关联zookeeper实例 */

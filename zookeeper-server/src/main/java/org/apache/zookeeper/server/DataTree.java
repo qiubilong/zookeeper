@@ -75,7 +75,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * The tree maintains two parallel data structures: a hashtable that maps from
  * full paths to DataNodes and a tree of DataNodes. All accesses to a path is
  * through the hashtable. The tree is traversed only when serializing to disk.
- */
+ */     /* 内存数据库 */
 public class DataTree {
     private static final Logger LOG = LoggerFactory.getLogger(DataTree.class);
 
@@ -83,10 +83,10 @@ public class DataTree {
      * This hashtable provides a fast lookup to the datanodes. The tree is the
      * source of truth and is where all the locking occurs
      */
-    private final ConcurrentHashMap<String, DataNode> nodes =
+    private final ConcurrentHashMap<String, DataNode> nodes =      /* 数据节点 */
         new ConcurrentHashMap<String, DataNode>();
 
-    private final WatchManager dataWatches = new WatchManager();
+    private final WatchManager dataWatches = new WatchManager();   /*  监听集合 */
 
     private final WatchManager childWatches = new WatchManager();
 
@@ -127,7 +127,7 @@ public class DataTree {
     /**
      * This hashtable lists the paths of the ephemeral nodes of a session.
      */
-    private final Map<Long, HashSet<String>> ephemerals =
+    private final Map<Long, HashSet<String>> ephemerals =    /* session - 临时节点集合*/
         new ConcurrentHashMap<Long, HashSet<String>>();
 
     /**

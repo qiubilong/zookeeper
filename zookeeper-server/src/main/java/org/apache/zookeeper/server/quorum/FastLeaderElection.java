@@ -98,17 +98,17 @@ public class FastLeaderElection implements Election {
         /**
          * Proposed leader
          */
-        long leader;
+        long leader; /* 选票leader - myid */
 
         /**
          * zxid of the proposed leader
          */
-        long zxid;
+        long zxid;  /* 最大事务ID */
 
         /**
          * Epoch
          */
-        long electionEpoch;
+        long electionEpoch;  /* 逻辑选举周期 */
 
         /**
          * current state of sender
@@ -118,13 +118,13 @@ public class FastLeaderElection implements Election {
         /**
          * Address of sender
          */
-        long sid;
+        long sid;  /* 接收人 - myid */
         
         QuorumVerifier qv;
         /**
          * epoch of the proposed leader
          */
-        long peerEpoch;
+        long peerEpoch; /* 选票leader - 任期 */
     }
 
     static byte[] dummyData = new byte[0];
@@ -158,17 +158,17 @@ public class FastLeaderElection implements Election {
         /**
          * Proposed leader in the case of notification
          */
-        long leader;
+        long leader; /* 想成为leader的 myid */
 
         /**
          * id contains the tag for acks, and zxid for notifications
          */
-        long zxid;
+        long zxid;  /* 事务ID */
 
         /**
          * Epoch
          */
-        long electionEpoch;
+        long electionEpoch; /* 逻辑选举周期 */
 
         /**
          * Current state;
@@ -178,7 +178,7 @@ public class FastLeaderElection implements Election {
         /**
          * Address of recipient
          */
-        long sid;
+        long sid;  /* 接收者 */
 
         /**
          * Used to send a QuorumVerifier (configuration info)
@@ -188,7 +188,7 @@ public class FastLeaderElection implements Election {
         /**
          * Leader epoch
          */
-        long peerEpoch;
+        long peerEpoch;/* 想成为leader的 任期 */
     }
 
     LinkedBlockingQueue<ToSend> sendqueue;       /* 选举层 -- 待发送的选票消息 */
@@ -223,7 +223,7 @@ public class FastLeaderElection implements Election {
                 Message response;
                 while (!stop) {
                     // Sleeps on receive
-                    try {
+                    try {    /* 获取 - 选举传输层 - 选票 */
                         response = manager.pollRecvQueue(3000, TimeUnit.MILLISECONDS);
                         if(response == null) continue;
 
@@ -543,7 +543,7 @@ public class FastLeaderElection implements Election {
     QuorumPeer self;
     Messenger messenger;
     AtomicLong logicalclock = new AtomicLong(); /** Election instance */
-    long proposedLeader; /* 选票提议 - serverId */
+    long proposedLeader; /* 选票提议 - myId */
     long proposedZxid;   /* 选票提议 - 事务id */
     long proposedEpoch;  /* 选票提议 - 选举周期 */
 
@@ -612,7 +612,7 @@ public class FastLeaderElection implements Election {
      *
      * @param self  QuorumPeer that created this object
      * @param manager   Connection manager
-     */
+     */  /* 选举应用层 */
     public FastLeaderElection(QuorumPeer self, QuorumCnxManager manager){
         this.stop = false;
         this.manager = manager;
@@ -727,7 +727,7 @@ public class FastLeaderElection implements Election {
          * 3- New epoch is the same as current epoch, new zxid is the same
          *  as current zxid, but server id is higher.
          */
-         /* 比较选票大小核心逻辑 */
+         /* 比较选票大小核心逻辑 - 任期 > 事务id > myid */
         return ((newEpoch > curEpoch) ||
                 ((newEpoch == curEpoch) &&
                 ((newZxid > curZxid) || ((newZxid == curZxid) && (newId > curId)))));
@@ -757,11 +757,11 @@ public class FastLeaderElection implements Election {
          */
         for (Map.Entry<Long, Vote> entry : votes.entrySet()) {
             if (vote.equals(entry.getValue())) {
-                voteSet.addAck(entry.getKey());
+                voteSet.addAck(entry.getKey()); /* 当前选票 */
             }
         }
 
-        return voteSet.hasAllQuorums();
+        return voteSet.hasAllQuorums(); /* 是否超过半数 */
     }
 
     /**
@@ -897,12 +897,12 @@ public class FastLeaderElection implements Election {
 
             synchronized(this){
                 logicalclock.incrementAndGet(); /* 选举周期自增 */
-                updateProposal(getInitId(), getInitLastLoggedZxid(), getPeerEpoch());/* 初始化投票 */
+                updateProposal(getInitId(), getInitLastLoggedZxid(), getPeerEpoch());/* 初始化选票 - 投自己 */
             }
 
             LOG.info("New election. My id =  " + self.getId() +
                     ", proposed zxid=0x" + Long.toHexString(proposedZxid));
-            sendNotifications(); /* 往所有节点广播投票信息 */
+            sendNotifications(); /* 广播选票 - 首选投自己 */
 
             /**
              * Loop in which we exchange notifications until we find a leader
@@ -923,7 +923,7 @@ public class FastLeaderElection implements Election {
                  */
                 if(n == null){
                     if(manager.haveDelivered()){
-                        sendNotifications();
+                        sendNotifications();/* 广播选票 - 首选投自己 */
                     } else {
                         manager.connectAll();
                     }
@@ -949,7 +949,7 @@ public class FastLeaderElection implements Election {
                             recvset.clear();
                             if(totalOrderPredicate(n.leader, n.zxid, n.peerEpoch,
                                     getInitId(), getInitLastLoggedZxid(), getPeerEpoch())) {
-                                updateProposal(n.leader, n.zxid, n.peerEpoch);
+                                updateProposal(n.leader, n.zxid, n.peerEpoch);//对方为准
                             } else {
                                 updateProposal(getInitId(),
                                         getInitLastLoggedZxid(),
