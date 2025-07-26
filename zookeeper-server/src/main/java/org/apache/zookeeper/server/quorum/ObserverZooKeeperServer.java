@@ -73,10 +73,10 @@ public class ObserverZooKeeperServer extends LearnerZooKeeperServer {
      *      
      * @param request
      */
-    public void commitRequest(Request request) {     
+    public void commitRequest(Request request) {   /* leader 事务通知 */
         if (syncRequestProcessorEnabled) {
             // Write to txnlog and take periodic snapshot
-            syncProcessor.processRequest(request);
+            syncProcessor.processRequest(request); /* 事务日志 */
         }
         commitProcessor.commit(request);        
     }
@@ -90,15 +90,15 @@ public class ObserverZooKeeperServer extends LearnerZooKeeperServer {
         // We might consider changing the processor behaviour of 
         // Observers to, for example, remove the disk sync requirements.
         // Currently, they behave almost exactly the same as followers.
-        RequestProcessor finalProcessor = new FinalRequestProcessor(this);
-        commitProcessor = new CommitProcessor(finalProcessor,
+        RequestProcessor finalProcessor = new FinalRequestProcessor(this); /* 3、操作数据库   */
+        commitProcessor = new CommitProcessor(finalProcessor, /* 2、等待写事务commit 或者 直接处理非写事务 */
                 Long.toString(getServerId()), true,
                 getZooKeeperServerListener());
         commitProcessor.start();
-        firstProcessor = new ObserverRequestProcessor(this, commitProcessor);
+        firstProcessor = new ObserverRequestProcessor(this, commitProcessor); /* 1、处理客户端请求 */
         ((ObserverRequestProcessor) firstProcessor).start();
 
-        /*
+        /**
          * Observer should write to disk, so that the it won't request
          * too old txn from the leader which may lead to getting an entire
          * snapshot.
@@ -112,7 +112,7 @@ public class ObserverZooKeeperServer extends LearnerZooKeeperServer {
         }
     }
 
-    /*
+    /**
      * Process a sync request
      */
     synchronized public void sync(){

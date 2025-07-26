@@ -118,7 +118,7 @@ public class Follower extends Learner{
         case Leader.PING:            
             ping(qp);            
             break;
-        case Leader.PROPOSAL: /* 1、事务提议 */
+        case Leader.PROPOSAL: /* 1、事务提议 - log */
             TxnHeader hdr = new TxnHeader();
             Record txn = SerializeUtils.deserializeTxn(qp.getData(), hdr);
             if (hdr.getZxid() != lastQueued + 1) {
@@ -135,9 +135,9 @@ public class Follower extends Learner{
                self.setLastSeenQuorumVerifier(qv, true);                               
             }
             
-            fzk.logRequest(hdr, txn);/* 事务提议刷盘 */
+            fzk.logRequest(hdr, txn); /* 1、事务提议 - log */
             break;
-        case Leader.COMMIT:/* 1、事务提交 */
+        case Leader.COMMIT:/* 2、事务提议 -  commit */
             fzk.commit(qp.getZxid());
             break;
             

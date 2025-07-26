@@ -41,9 +41,9 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
 
     FollowerZooKeeperServer zks;
 
-    RequestProcessor nextProcessor;
+    RequestProcessor nextProcessor;  /* CommitProcessor */
 
-    LinkedBlockingQueue<Request> queuedRequests = new LinkedBlockingQueue<Request>();
+    LinkedBlockingQueue<Request> queuedRequests = new LinkedBlockingQueue<Request>(); /* 客户端请求 */
 
     boolean finished = false;
 
@@ -59,7 +59,7 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
     public void run() {
         try {
             while (!finished) {
-                Request request = queuedRequests.take();
+                Request request = queuedRequests.take(); /* 异步处理客户端请求 */
                 if (LOG.isTraceEnabled()) {
                     ZooTrace.logRequest(LOG, ZooTrace.CLIENT_REQUEST_TRACE_MASK,
                             'F', request, "");
@@ -70,7 +70,7 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
                 // We want to queue the request to be processed before we submit
                 // the request to the leader so that we are ready to receive
                 // the response
-                nextProcessor.processRequest(request);
+                nextProcessor.processRequest(request); /* CommitProcessor */
 
                 // We now ship the request to the leader. As with all
                 // other quorum operations, sync also follows this code
@@ -93,7 +93,7 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
                 case OpCode.setACL:
                 case OpCode.multi:
                 case OpCode.check:
-                    zks.getFollower().request(request);
+                    zks.getFollower().request(request); /* 转发写事务 到 Leader */
                     break;
                 case OpCode.createSession:
                 case OpCode.closeSession:

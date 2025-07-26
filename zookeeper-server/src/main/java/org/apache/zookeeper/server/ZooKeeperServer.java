@@ -814,7 +814,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
             touch(si.cnxn); /* 刷新连接活跃时间，过期清理临时节点 */
             boolean validpacket = Request.isValid(si.type);
             if (validpacket) {
-                firstProcessor.processRequest(si); /* 处理客户端请求 - LeaderRequestProcessor */
+                firstProcessor.processRequest(si); /* 处理客户端请求 - LeaderRequestProcessor / FollowerRequestProcessor */
                 if (si.cnxn != null) {
                     incInProcess();
                 }

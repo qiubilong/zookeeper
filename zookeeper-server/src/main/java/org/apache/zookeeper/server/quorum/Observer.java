@@ -66,16 +66,16 @@ public class Observer extends Learner{
             QuorumServer leaderServer = findLeader();
             LOG.info("Observing " + leaderServer.addr);
             try {
-                connectToLeader(leaderServer.addr, leaderServer.hostname);
+                connectToLeader(leaderServer.addr, leaderServer.hostname); /* 1、连接leader */
                 long newLeaderZxid = registerWithLeader(Leader.OBSERVERINFO);
                 if (self.isReconfigStateChange())
                    throw new Exception("learned about role change");
  
-                syncWithLeader(newLeaderZxid);
+                syncWithLeader(newLeaderZxid);/* 2、同步leader数据 */
                 QuorumPacket qp = new QuorumPacket();
                 while (this.isRunning()) {
                     readPacket(qp);
-                    processPacket(qp);
+                    processPacket(qp);/* 3、处理leader命令 */
                 }
             } catch (Exception e) {
                 LOG.warn("Exception when observing the leader", e);
@@ -123,7 +123,7 @@ public class Observer extends Learner{
             Record txn = SerializeUtils.deserializeTxn(qp.getData(), hdr);
             Request request = new Request (hdr.getClientId(),  hdr.getCxid(), hdr.getType(), hdr, txn, 0);
             ObserverZooKeeperServer obs = (ObserverZooKeeperServer)zk;
-            obs.commitRequest(request);
+            obs.commitRequest(request); /* 处理 leader 事务通知 */
             break;
         case Leader.INFORMANDACTIVATE:            
             hdr = new TxnHeader();

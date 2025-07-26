@@ -368,7 +368,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                 LOG.info("SSL handshake complete with {} - {} - {}", sslSock.getRemoteSocketAddress(),
                          sslSock.getSession().getProtocol(), sslSock.getSession().getCipherSuite());
             } else {
-                sock = SOCKET_FACTORY.get();
+                sock = SOCKET_FACTORY.get();/* new Socket() - BIO */
                 setSockOpts(sock);
                 sock.connect(electionAddr, cnxTO);/* 与对方建立连接 */
             }
@@ -384,7 +384,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
         }
 
         try {
-            startConnection(sock, sid); /* 建立连接后，发送本机myid，创建 独立的 - 发送、接收工作线程，发送队列 */
+            startConnection(sock, sid); /* 建立连接后，发送本机myid，创建 独立的 - 选票发送、接收工作线程，发送队列 */
         } catch (IOException e) {
             LOG.error("Exception while connecting, id: {}, addr: {}, closing learner connection",
                     new Object[] { sid, sock.getRemoteSocketAddress() }, e);
@@ -483,8 +483,8 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             // Otherwise proceed with the connection
         } else {
             LOG.debug("Have larger server identifier, so keeping the connection: (myId:{} --> sid:{})", self.getId(), sid);
-            SendWorker sw = new SendWorker(sock, sid);
-            RecvWorker rw = new RecvWorker(sock, din, sid, sw);
+            SendWorker sw = new SendWorker(sock, sid);          /* 选票 - 发送 - IO线程 */
+            RecvWorker rw = new RecvWorker(sock, din, sid, sw); /* 选票 - 接受 - IO线程  */
             sw.setRecv(rw);
 
             SendWorker vsw = senderWorkerMap.get(sid);
@@ -713,7 +713,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             // Resolve hostname for the remote server before attempting to
             // connect in case the underlying ip address has changed.
             self.recreateSocketAddresses(sid);
-            Map<Long, QuorumPeer.QuorumServer> lastCommittedView = self.getView();
+            Map<Long, QuorumPeer.QuorumServer> lastCommittedView = self.getView();//getQuorumVerifier().getAllMembers()
             QuorumVerifier lastSeenQV = self.getLastSeenQuorumVerifier();
             Map<Long, QuorumPeer.QuorumServer> lastProposedView = lastSeenQV.getAllMembers();
             if (lastCommittedView.containsKey(sid)) {
@@ -1021,7 +1021,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
      */
     class SendWorker extends ZooKeeperThread { /* 每个节点一个发送投票消息 - 网络IO线程 */
         Long sid;/* 对方serverId */
-        Socket sock;
+        Socket sock; /* BIO */
         RecvWorker recvWorker;
         volatile boolean running = true;
         DataOutputStream dout;
@@ -1140,7 +1140,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                         ArrayBlockingQueue<ByteBuffer> bq = queueSendMap
                                 .get(sid);
                         if (bq != null) {
-                            b = pollSendQueue(bq, 1000, TimeUnit.MILLISECONDS); /* 获取投票消息 */
+                            b = pollSendQueue(bq, 1000, TimeUnit.MILLISECONDS); /* 消费选票队列 */
                         } else {
                             LOG.error("No queue of incoming messages for " +
                                       "server " + sid);
@@ -1172,7 +1172,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
      */
     class RecvWorker extends ZooKeeperThread { /* 每个节点一个选票接收线程 */
         Long sid; /* 对方serverId */
-        Socket sock;
+        Socket sock; /* BIO */
         volatile boolean running = true;
         final DataInputStream din;
         final SendWorker sw;

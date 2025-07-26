@@ -902,7 +902,7 @@ public class FastLeaderElection implements Election {
 
             LOG.info("New election. My id =  " + self.getId() +
                     ", proposed zxid=0x" + Long.toHexString(proposedZxid));
-            sendNotifications(); /* 广播选票 - 首选投自己 */
+            sendNotifications(); /* 广播选票 - 首选投自己 - 与其他节点建立连接 */
 
             /**
              * Loop in which we exchange notifications until we find a leader

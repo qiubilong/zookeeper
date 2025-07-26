@@ -176,7 +176,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                        !isProcessingCommit() &&
                        (request = queuedRequests.poll()) != null) {
                     if (needCommit(request)) {
-                        nextPending.set(request);
+                        nextPending.set(request); /* 存在写事务，读请求得排队等待 */
                     } else {
                         sendToNextProcessor(request);/* 非写事务命令，例如getData - 不需要ack */
                     }
@@ -210,7 +210,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
              * waiting in queuedRequests or it is waiting for a
              * commit. 
              */
-            if ( !isWaitingForCommit() && !queuedRequests.isEmpty()) {
+            if ( !isWaitingForCommit() && !queuedRequests.isEmpty()) {//可能存在读请求
                 return;
             }
             request = committedRequests.poll();/* 消费一个已经多半数ack的事务 */

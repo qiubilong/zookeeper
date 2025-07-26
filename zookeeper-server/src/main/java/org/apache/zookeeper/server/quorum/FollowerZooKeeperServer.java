@@ -67,20 +67,20 @@ public class FollowerZooKeeperServer extends LearnerZooKeeperServer {
 
     @Override /* Follower请求处理链 */
     protected void setupRequestProcessors() {
-        RequestProcessor finalProcessor = new FinalRequestProcessor(this);
-        commitProcessor = new CommitProcessor(finalProcessor,
+        RequestProcessor finalProcessor = new FinalRequestProcessor(this); /* 3、操作内存数据库 */
+        commitProcessor = new CommitProcessor(finalProcessor,/* 2、commit事务 */
                 Long.toString(getServerId()), true, getZooKeeperServerListener());
         commitProcessor.start();
-        firstProcessor = new FollowerRequestProcessor(this, commitProcessor);
+        firstProcessor = new FollowerRequestProcessor(this, commitProcessor);//处理客户端请求
         ((FollowerRequestProcessor) firstProcessor).start();
-        syncProcessor = new SyncRequestProcessor(this,
+        syncProcessor = new SyncRequestProcessor(this, /* 1、事务提议写本地文件后，ack主节点 */
                 new SendAckRequestProcessor((Learner)getFollower()));
         syncProcessor.start();
     }
 
     LinkedBlockingQueue<Request> pendingTxns = new LinkedBlockingQueue<Request>();
 
-    public void logRequest(TxnHeader hdr, Record txn) { /* 事务提议刷盘 */
+    public void logRequest(TxnHeader hdr, Record txn) { /* 1、事务提议log */
         Request request = new Request(hdr.getClientId(), hdr.getCxid(), hdr.getType(), hdr, txn, hdr.getZxid());
         if ((request.zxid & 0xffffffffL) != 0) {
             pendingTxns.add(request);
@@ -94,7 +94,7 @@ public class FollowerZooKeeperServer extends LearnerZooKeeperServer {
      * the pendingTxns queue and hands it to the commitProcessor to commit.
      * @param zxid - must correspond to the head of pendingTxns if it exists
      */
-    public void commit(long zxid) {
+    public void commit(long zxid) {  /* 2、事务提议commit */
         if (pendingTxns.size() == 0) {
             LOG.warn("Committing " + Long.toHexString(zxid)
                     + " without seeing txn");
@@ -108,7 +108,7 @@ public class FollowerZooKeeperServer extends LearnerZooKeeperServer {
             System.exit(12);
         }
         Request request = pendingTxns.remove();
-        commitProcessor.commit(request);
+        commitProcessor.commit(request); /* 事务commit */
     }
 
     synchronized public void sync(){

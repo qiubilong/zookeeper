@@ -948,7 +948,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     synchronized public void startLeaderElection() {
        try {
            if (getPeerState() == ServerState.LOOKING) {
-               currentVote = new Vote(myid, getLastLoggedZxid(), getCurrentEpoch());/* 默认投票 */
+               currentVote = new Vote(myid, getLastLoggedZxid(), getCurrentEpoch());/* 默认选票 */
            }
        } catch(IOException e) {
            RuntimeException re = new RuntimeException(e.getMessage());

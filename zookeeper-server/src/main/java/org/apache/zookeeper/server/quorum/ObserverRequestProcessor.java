@@ -68,7 +68,7 @@ public class ObserverRequestProcessor extends ZooKeeperCriticalThread implements
     public void run() {
         try {
             while (!finished) {
-                Request request = queuedRequests.take();
+                Request request = queuedRequests.take(); /* 异步处理客户端请求 */
                 if (LOG.isTraceEnabled()) {
                     ZooTrace.logRequest(LOG, ZooTrace.CLIENT_REQUEST_TRACE_MASK,
                             'F', request, "");
@@ -79,7 +79,7 @@ public class ObserverRequestProcessor extends ZooKeeperCriticalThread implements
                 // We want to queue the request to be processed before we submit
                 // the request to the leader so that we are ready to receive
                 // the response
-                nextProcessor.processRequest(request);
+                nextProcessor.processRequest(request);//CommitProcessor
 
                 // We now ship the request to the leader. As with all
                 // other quorum operations, sync also follows this code
@@ -102,7 +102,7 @@ public class ObserverRequestProcessor extends ZooKeeperCriticalThread implements
                 case OpCode.setACL:
                 case OpCode.multi:
                 case OpCode.check:
-                    zks.getObserver().request(request);
+                    zks.getObserver().request(request); /* 转发写请求 到 leader */
                     break;
                 case OpCode.createSession:
                 case OpCode.closeSession:
