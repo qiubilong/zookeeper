@@ -296,8 +296,8 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
                             int quorumCnxnThreadsSize,
                             boolean quorumSaslAuthEnabled) {
         this.recvQueue = new ArrayBlockingQueue<Message>(RECV_CAPACITY); /* 公共的 - 接收选票 - 消息队列 */
-        this.queueSendMap = new ConcurrentHashMap<Long, ArrayBlockingQueue<ByteBuffer>>();/* 每个节点一个发送选票消息队列 */
-        this.senderWorkerMap = new ConcurrentHashMap<Long, SendWorker>(); /* 每个节点一个发送选票消息线程网络io */
+        this.queueSendMap = new ConcurrentHashMap<Long, ArrayBlockingQueue<ByteBuffer>>();/* 每个节点一个 发送选票消息队列 */
+        this.senderWorkerMap = new ConcurrentHashMap<Long, SendWorker>(); /* 每个节点一个 发送选票消息 网络io线程 */
         this.lastMessageSent = new ConcurrentHashMap<Long, ByteBuffer>();
 
         String cnxToValue = System.getProperty("zookeeper.cnxTimeout");
@@ -764,7 +764,7 @@ public class QuorumCnxManager { /* 选票传输层 --  一组节点保留一条T
             }
         }
 
-        return false;
+        return false;/*  还有消息未发送 */
     }
 
     /**

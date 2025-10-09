@@ -536,7 +536,7 @@ public class Leader {
             // us. We do this by waiting for the NEWLEADER packet to get
             // acknowledged
                        
-             waitForEpochAck(self.getId(), leaderStateSummary);/*等待多半数follower接地同步完成 */
+             waitForEpochAck(self.getId(), leaderStateSummary);/*等待多半数follower节点同步完成 */
              self.setCurrentEpoch(epoch);    
             
              try {
@@ -1198,7 +1198,7 @@ public class Leader {
     }
     // VisibleForTesting
     protected final Set<Long> connectingFollowers = new HashSet<Long>();
-    public long getEpochToPropose(long sid, long lastAcceptedEpoch) throws InterruptedException, IOException {
+    public long getEpochToPropose(long sid, long lastAcceptedEpoch) throws InterruptedException, IOException { /* 任期同步 */
         synchronized(connectingFollowers) {
             if (!waitingForNewEpoch) {
                 return epoch;
@@ -1211,7 +1211,7 @@ public class Leader {
             }
             QuorumVerifier verifier = self.getQuorumVerifier();
             if (connectingFollowers.contains(self.getId()) &&
-                                            verifier.containsQuorum(connectingFollowers)) {
+                                            verifier.containsQuorum(connectingFollowers)) { /* 超过半数 */
                 waitingForNewEpoch = false;
                 self.setAcceptedEpoch(epoch);
                 connectingFollowers.notifyAll();
@@ -1253,7 +1253,7 @@ public class Leader {
                 }
             }
             QuorumVerifier verifier = self.getQuorumVerifier();
-            if (electingFollowers.contains(self.getId()) && verifier.containsQuorum(electingFollowers)) {
+            if (electingFollowers.contains(self.getId()) && verifier.containsQuorum(electingFollowers)) { /* 超过半数 */
                 electionFinished = true;
                 electingFollowers.notifyAll();
             } else {

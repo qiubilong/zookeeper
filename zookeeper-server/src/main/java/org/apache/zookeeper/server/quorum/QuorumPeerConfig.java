@@ -76,7 +76,7 @@ public class QuorumPeerConfig {
     protected String dynamicConfigFileStr = null;
     protected String configFileStr = null;
     protected int tickTime = ZooKeeperServer.DEFAULT_TICK_TIME;
-    protected int maxClientCnxns = 60;
+    protected int maxClientCnxns = 60; /* 每个ip限制连接数 */
     /** defaults to -1 if not set explicitly */
     protected int minSessionTimeout = -1;
     /** defaults to -1 if not set explicitly */
@@ -602,7 +602,7 @@ public class QuorumPeerConfig {
             throws IOException, ConfigException {
         quorumVerifier = parseDynamicConfig(prop, electionAlg, true, configBackwardCompatibilityMode);/* 解析服务列表 */
         setupMyId();/* 解析服务id -myid */
-        setupClientPort();
+        setupClientPort();//忽略， server.id中指定服务端口
         setupPeerType();
         checkValidity();
     }

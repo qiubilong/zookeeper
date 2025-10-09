@@ -678,7 +678,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
                  + (directBufferBytes == 0 ? "gathered writes." :
                     ("" + (directBufferBytes/1024) + " kB direct buffers.")));
         for(int i=0; i<numSelectorThreads; ++i) {
-            selectorThreads.add(new SelectorThread(i)); /* 多路复用器 - 监听线程 */
+            selectorThreads.add(new SelectorThread(i)); /* 读写 - 多路复用器 - 监听线程 */
         }
 
         this.ss = ServerSocketChannel.open(); /* 服务端 NIO Socket */
@@ -735,7 +735,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     }
 
     @Override
-    public void start() {
+    public void start() {/* 集群模式 */
         stopped = false;
         if (workerPool == null) {
             workerPool = new WorkerService(

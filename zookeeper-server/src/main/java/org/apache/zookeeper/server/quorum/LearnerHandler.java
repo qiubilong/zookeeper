@@ -78,7 +78,7 @@ public class LearnerHandler extends ZooKeeperThread { /* 从节点数据交互�
     /**
      * ZooKeeper server identifier of this learner
      */
-    protected long sid = 0;
+    protected long sid = 0; /* 从节点服务id */
 
     long getSid(){
         return sid;
@@ -442,7 +442,7 @@ public class LearnerHandler extends ZooKeeperThread { /* 从节点数据交互�
 				}
                 ByteBuffer bbepoch = ByteBuffer.wrap(ackEpochPacket.getData());
                 ss = new StateSummary(bbepoch.getInt(), ackEpochPacket.getZxid());
-                leader.waitForEpochAck(this.getSid(), ss);
+                leader.waitForEpochAck(this.getSid(), ss); /* 同步任期 */
             }
             peerLastZxid = ss.getLastZxid();/* Follower节点最新事务ID */
            
@@ -617,7 +617,7 @@ public class LearnerHandler extends ZooKeeperThread { /* 从节点数据交互�
                         si = new Request(null, sessionId, cxid, type, bb, qp.getAuthinfo());
                     }
                     si.setOwner(this);
-                    leader.zk.submitLearnerRequest(si);
+                    leader.zk.submitLearnerRequest(si); /* 转发Follower写请求 */
                     break;
                 default:
                     LOG.warn("unexpected quorum packet, type: {}", packetToString(qp));

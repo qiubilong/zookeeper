@@ -478,7 +478,7 @@ public class DataTree {
                 HashSet<String> list = ephemerals.get(ephemeralOwner);
                 if (list == null) {
                     list = new HashSet<String>();
-                    ephemerals.put(ephemeralOwner, list);
+                    ephemerals.put(ephemeralOwner, list);/* 临时节点 */
                 }
                 synchronized (list) {
                     list.add(path);

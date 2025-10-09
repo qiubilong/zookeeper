@@ -229,7 +229,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                 throw new ConfigException(addressStr + wrongFormat);
             }
 
-            if (serverClientParts.length == 2) {
+            if (serverClientParts.length == 2) {//忽略，用于docker镜像配置，指定服务端口 server.1=host:2888:3888;2181
                 //LOG.warn("ClientParts: " + serverClientParts[1]);
                 String clientParts[] = ConfigUtils.getHostAndPort(serverClientParts[1]);
                 if (clientParts.length > 2) {
@@ -892,7 +892,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             LOG.warn("Problem starting AdminServer", e);
             System.out.println(e);
         }
-        startLeaderElection(); /* 1、监听选举端口-->每个节点TCP连接独立一个选票消息队列发送和线程。2、创建选举算法，初始化选举投票发送和接受的队列和线程。     多层队列，可以避免相互影响 */
+        startLeaderElection(); /* 1、监听选举端口-->每个节点独立的 选票消息队列、发送线程。2、创建选举算法，初始化选举投票发送和接受的队列和线程。     多层队列，可以避免相互影响 */
         super.start(); /* 启动线程，进入run()方法  --> 选举循环 */
     }
 
@@ -968,7 +968,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                 throw new RuntimeException(e);
             }
         }
-        this.electionAlg = createElectionAlgorithm(electionType); /* 初始化选举算法 - electionType = 3 =  FastLeaderElection -->监听选举端口，初始化多级投票消息发送与接收的队列与线程 */
+        this.electionAlg = createElectionAlgorithm(electionType); /* 初始化选举算法 - electionType = 3 =  FastLeaderElection -->监听选举端口，初始化 多级 投票消息发送与接收的队列与线程 */
     }
 
     /**

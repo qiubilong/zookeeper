@@ -398,7 +398,7 @@ public class FastLeaderElection implements Election {
                                  * lagging behind.
                                  */
                                 if((ackstate == QuorumPeer.ServerState.LOOKING)
-                                        && (n.electionEpoch < logicalclock.get())){
+                                        && (n.electionEpoch < logicalclock.get())){ /* 对方选举任期小，说明对方刚加入集群，以本节点为准 */
                                     Vote v = getVote();
                                     QuorumVerifier qv = self.getQuorumVerifier();
                                     ToSend notmsg = new ToSend(ToSend.mType.notification,
@@ -956,13 +956,13 @@ public class FastLeaderElection implements Election {
                                         getPeerEpoch());
                             }
                             sendNotifications();
-                        } else if (n.electionEpoch < logicalclock.get()) {/* 对方周期小，说明对方刚加入集群，丢失消息 */
+                        } else if (n.electionEpoch < logicalclock.get()) {/* 对方周期小，说明对方刚加入集群，丢失消息（不能进去选票箱，选票接收线程已经回复有效选票） */
                             if(LOG.isDebugEnabled()){
                                 LOG.debug("Notification election epoch is smaller than logicalclock. n.electionEpoch = 0x"
                                         + Long.toHexString(n.electionEpoch)
                                         + ", logicalclock=0x" + Long.toHexString(logicalclock.get()));
                             }
-                            break;
+                            break;//结束本次switch
                         } else if (totalOrderPredicate(n.leader, n.zxid, n.peerEpoch, /* 3、周期相等，比较选票大小 */
                                 proposedLeader, proposedZxid, proposedEpoch)) {
                             updateProposal(n.leader, n.zxid, n.peerEpoch); /* 3.1 更新当前节点选票 */
