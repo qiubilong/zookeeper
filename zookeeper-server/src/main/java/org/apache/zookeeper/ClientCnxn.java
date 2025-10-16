@@ -465,7 +465,7 @@ public class ClientCnxn {
             final Set<Watcher> watchers;
             if (materializedWatchers == null) {
                 // materialize the watchers based on the event
-                watchers = watcher.materialize(event.getState(),
+                watchers = watcher.materialize(event.getState(), /* ClientWatchManager.materialize -- 找到 watcher & 移除 */
                         event.getType(), event.getPath());
             } else {
                 watchers = new HashSet<Watcher>();
@@ -685,7 +685,7 @@ public class ClientCnxn {
     protected void finishPacket(Packet p) {
         int err = p.replyHeader.getErr();
         if (p.watchRegistration != null) {
-            p.watchRegistration.register(err);
+            p.watchRegistration.register(err); /* 响应成功后，注册watcher */
         }
         // Add all the removed watch events to the event queue, so that the
         // clients will be notified with 'Data/Child WatchRemoved' event type.
@@ -924,7 +924,7 @@ public class ClientCnxn {
                             + Long.toHexString(sessionId) + ", packet:: " + packet);
                 }
             } finally {
-                finishPacket(packet);/* 设置响应结果，唤醒请求者线程 */
+                finishPacket(packet);/* 设置响应结果，唤醒请求者线程  & 设置watcher */
             }
         }
 

@@ -498,7 +498,7 @@ public class ZooKeeper implements AutoCloseable {
             case NodeDataChanged:
             case NodeCreated:
                 synchronized (dataWatches) {
-                    addTo(dataWatches.remove(clientPath), result);
+                    addTo(dataWatches.remove(clientPath), result); /* 一次性watcher */
                 }
                 synchronized (existWatches) {
                     addTo(existWatches.remove(clientPath), result);
@@ -557,14 +557,14 @@ public class ZooKeeper implements AutoCloseable {
          */
         public void register(int rc) {
             if (shouldAddWatch(rc)) {
-                Map<String, Set<Watcher>> watches = getWatches(rc);
+                Map<String, Set<Watcher>> watches = getWatches(rc); /* 全局 watcher */
                 synchronized(watches) {
                     Set<Watcher> watchers = watches.get(clientPath);
                     if (watchers == null) {
                         watchers = new HashSet<Watcher>();
                         watches.put(clientPath, watchers);
                     }
-                    watchers.add(watcher);
+                    watchers.add(watcher); /* 注册watcher */
                 }
             }
         }
